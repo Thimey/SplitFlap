@@ -18,7 +18,7 @@ SplitFlapArray splitFlapArray = SplitFlapArray();
 
 void ISR_Sensor()
 {
-  splitFlapArray.ISR_Sensor();
+    splitFlapArray.ISR_Sensor();
 }
 
 void connectWiFi() {
@@ -53,60 +53,60 @@ void connectAWS() {
 }
 
 void messageHandler(String &topic, String &payload) {
-  StaticJsonDocument<200> doc;
-  deserializeJson(doc, payload);
+    StaticJsonDocument<200> doc;
+    deserializeJson(doc, payload);
 
-  const char* word = doc["word"];
+    const char* word = doc["word"];
 
-  splitFlapArray.setWord(word);
+    splitFlapArray.setWord(word);
 }
 
 void setup() {
-  Serial.begin(9600);
+    Serial.begin(9600);
 
-  pinMode(SR_LATCH_PIN, OUTPUT);
-  pinMode(SR_CLOCK_PIN, OUTPUT);
-  pinMode(SR_DATA_PIN, OUTPUT);
+    pinMode(SR_LATCH_PIN, OUTPUT);
+    pinMode(SR_CLOCK_PIN, OUTPUT);
+    pinMode(SR_DATA_PIN, OUTPUT);
 
-  pinMode(DIR_PIN, OUTPUT);
-  pinMode(SENSOR_PIN, INPUT);
+    pinMode(DIR_PIN, OUTPUT);
+    pinMode(SENSOR_PIN, INPUT);
 
-  digitalWrite(DIR_PIN, LOW);
+    digitalWrite(DIR_PIN, LOW);
 
-  attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), ISR_Sensor, FALLING);
+    attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), ISR_Sensor, FALLING);
 
-  // Connect to the configured WiFi
-  connectWiFi();
+    // Connect to the configured WiFi
+    connectWiFi();
 
-  // Configure WiFiClientSecure to use the AWS IoT device credentials
-  net.setCACert(AWS_CERT_CA);
-  net.setCertificate(AWS_CERT_CRT);
-  net.setPrivateKey(AWS_CERT_PRIVATE);
+    // Configure WiFiClientSecure to use the AWS IoT device credentials
+    net.setCACert(AWS_CERT_CA);
+    net.setCertificate(AWS_CERT_CRT);
+    net.setPrivateKey(AWS_CERT_PRIVATE);
 
-  // Connect to the MQTT broker to AWS endpoint for Thing
-  client.begin(AWS_IOT_ENDPOINT, 8883, net);
+    // Connect to the MQTT broker to AWS endpoint for Thing
+    client.begin(AWS_IOT_ENDPOINT, 8883, net);
 
-  // Create a message handler
-  client.onMessage(messageHandler);
+    // Create a message handler
+    client.onMessage(messageHandler);
 
-  // Connect device to AWS iot
-  connectAWS();
+    // Connect device to AWS iot
+    connectAWS();
 
 
-  // Ensure all split flaps start from blank
-  // resetFlaps(splitFlapArray);
+    // Ensure all split flaps start from blank
+    // resetFlaps(splitFlapArray);
 }
 
 void loop() {
-  // Maintain a connection to the server
-  client.loop();
+    // Maintain a connection to the server
+    client.loop();
 
-  if (!client.connected()) {
-      Serial.println(F("Lost connection, reconnecting..."));
-      connectAWS();
-  }
+    if (!client.connected()) {
+        Serial.println(F("Lost connection, reconnecting..."));
+        connectAWS();
+    }
 
-  delay(1000);
+    delay(1000);
 
-  splitFlapArray.loop();
+    splitFlapArray.loop();
 }
