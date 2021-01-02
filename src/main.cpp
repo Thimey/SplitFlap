@@ -92,9 +92,9 @@ void setup() {
     // Connect device to AWS iot
     connectAWS();
 
-
+    // TODO: Uncomment this when sensors installed
     // Ensure all split flaps start from blank
-    // resetFlaps(splitFlapArray);
+    // splitFlapArray.resetFlaps();
 }
 
 void loop() {

@@ -86,9 +86,15 @@ void SplitFlapArray::resetFlaps()
         // Reset the flap targets for each splitFlap
         SplitFlapArray::splitFlaps[i].reset();
 
-        // Step through flaps, till sensor triggered
-        while(SplitFlapArray::splitFlaps[i].isResetting()) {
+        // Step through flaps, till sensor triggered.
+        // Cap steps to two rotations - if sensor hasn't triggered by then something is broken
+        int stepCounter = 0;
+        while (
+            SplitFlapArray::splitFlaps[i].isResetting()
+            && stepCounter < 2 * STEPS_PER_REVOLUTION
+        ) {
             stepSplitFlapArrayOnce(B11111111);
+            ++stepCounter;
         }
     }
 }
