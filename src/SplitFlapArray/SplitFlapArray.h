@@ -7,6 +7,7 @@ class SplitFlapArray {
     private:
         SplitFlap splitFlaps[NUMBER_OF_SPLIT_FLAPS];
 
+        uint8_t toShiftInput(bool shouldStepValues[NUMBER_OF_SPLIT_FLAPS]);
         void shiftOutSteps(uint8_t shiftInput);
         void stepSplitFlapArrayOnce(uint8_t shiftInput);
         void stepSplitFlapArray();

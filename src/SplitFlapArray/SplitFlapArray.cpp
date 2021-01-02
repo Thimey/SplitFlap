@@ -2,7 +2,6 @@
 #include <Arduino.h>
 
 #include "config.h"
-#include "utils/utils.h"
 #include "SplitFlap/SplitFlap.h"
 #include "SplitFlapArray.h"
 
@@ -13,6 +12,18 @@ SplitFlapArray::SplitFlapArray()
     SplitFlapArray::splitFlaps[i] = SplitFlap(name);
   }
 };
+
+uint8_t SplitFlapArray::toShiftInput(bool shouldStepValues[NUMBER_OF_SPLIT_FLAPS])
+{
+    uint8_t shiftInput = 0;
+    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+    if (shouldStepValues[i]) {
+        shiftInput |= 1 << (MAX_SPLIT_FLAPS - 1 - i);
+    }
+    }
+
+    return shiftInput;
+}
 
 void SplitFlapArray::shiftOutSteps(uint8_t shiftInput)
 {
@@ -44,7 +55,7 @@ void SplitFlapArray::stepSplitFlapArray()
     splitFlapsToStep[i] = !isFlapAtTarget;
   }
 
-  const uint8_t shiftInput = utils::toShiftInput(splitFlapsToStep);
+  const uint8_t shiftInput = SplitFlapArray::toShiftInput(splitFlapsToStep);
 
   SplitFlapArray::stepSplitFlapArrayOnce(shiftInput);
 }
