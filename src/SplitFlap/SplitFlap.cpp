@@ -1,20 +1,20 @@
 #include <Arduino.h>
-#include "../config.h"
+#include "config.h"
 #include "SplitFlap.h"
 
 const int DEFAULT_FLAP_INDEX = 0;
 const int NULL_FLAP_TARGET_INDEX = -1;
 const int NULL_STEPS_TO_TARGET = -1;
 
-SplitFlap::SplitFlap(String name) :
+SplitFlap::SplitFlap() {}
+
+SplitFlap::SplitFlap(String name = "SplitFlap") :
     currentFlapIndex(0),
     flapTargetIndex(NULL_FLAP_TARGET_INDEX),
     resetting(false),
     name(name),
     stepsToTarget(NULL_STEPS_TO_TARGET)
-{
-    // pinMode(stepPin, OUTPUT);
-}
+{}
 
 int SplitFlap::getFlapIndex(uint8_t flapCharacter)
 {

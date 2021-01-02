@@ -13,9 +13,11 @@ class SplitFlap {
         void incrementFlapIndex();
 
     public:
+        SplitFlap();
+        SplitFlap(String name);
+
         String name;
         int stepsToTarget;
-        SplitFlap(String name);
 
         boolean isAtFlapTarget();
 
