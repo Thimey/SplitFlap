@@ -64,7 +64,7 @@ bool SplitFlapArray::hasSplitFlapArrayReachedTarget()
 {
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
         if (!SplitFlapArray::splitFlaps[i].isAtFlapTarget()) {
-        return false;
+            return false;
         }
     }
 
@@ -73,20 +73,23 @@ bool SplitFlapArray::hasSplitFlapArrayReachedTarget()
 
 void SplitFlapArray::ISR_Sensor()
 {
-    SplitFlapArray::splitFlaps[0].stopReset();
+    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+        if (SplitFlapArray::splitFlaps[i].isResetting()) {
+            SplitFlapArray::splitFlaps[i].stopReset();
+        }
+    }
 }
 
 void SplitFlapArray::resetFlaps()
 {
-    // Reset the flap targets for each splitFlap
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+        // Reset the flap targets for each splitFlap
         SplitFlapArray::splitFlaps[i].reset();
-    }
 
-    // TODO: Use shift register
-    // For now just step all until single sensor reached
-    while(SplitFlapArray::splitFlaps[0].isResetting()) {
-        stepSplitFlapArrayOnce(B11111111);
+        // Step through flaps, till sensor triggered
+        while(SplitFlapArray::splitFlaps[i].isResetting()) {
+            stepSplitFlapArrayOnce(B11111111);
+        }
     }
 }
 
