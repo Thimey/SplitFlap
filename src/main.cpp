@@ -41,13 +41,14 @@ void connectAWS() {
         delay(1000);
     }
 
-    if(!client.connected()){
+    if (!client.connected()){
         Serial.println("AWS IoT Timeout!");
         return;
     }
 
-    // Subscribe to screen update topic
+    // Subscribe to topics
     client.subscribe(WORD_SUB_TOPIC);
+    client.subscribe(RESET_SUB_TOPIC);
 
     Serial.println("AWS IoT Connected!");
 }
@@ -56,9 +57,12 @@ void messageHandler(String &topic, String &payload) {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, payload);
 
-    const char* word = doc["word"];
-
-    splitFlapArray.setWord(word);
+    if (topic == WORD_SUB_TOPIC) {
+        const char* word = doc["word"];
+        splitFlapArray.setWord(word);
+    } else if (topic == RESET_SUB_TOPIC) {
+        splitFlapArray.resetFlaps();
+    }
 }
 
 void setup() {
@@ -67,8 +71,8 @@ void setup() {
     pinMode(SR_LATCH_PIN, OUTPUT);
     pinMode(SR_CLOCK_PIN, OUTPUT);
     pinMode(SR_DATA_PIN, OUTPUT);
-
     pinMode(DIR_PIN, OUTPUT);
+    pinMode(SLEEP_PIN, OUTPUT);
     pinMode(SENSOR_PIN, INPUT);
 
     digitalWrite(DIR_PIN, LOW);
@@ -86,13 +90,12 @@ void setup() {
     // Connect to the MQTT broker to AWS endpoint for Thing
     client.begin(AWS_IOT_ENDPOINT, 8883, net);
 
-    // Create a message handler
+    // Attach message handler to MQTT broker
     client.onMessage(messageHandler);
 
     // Connect device to AWS iot
     connectAWS();
 
-    // TODO: Uncomment this when sensors installed
     // Ensure all split flaps start from blank
     splitFlapArray.resetFlaps();
 }
@@ -106,7 +109,7 @@ void loop() {
         connectAWS();
     }
 
-    delay(1000);
+    delay(500);
 
     splitFlapArray.loop();
 }

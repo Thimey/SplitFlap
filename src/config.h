@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 const String WORD_SUB_TOPIC = "splitFlap1/word";
+const String RESET_SUB_TOPIC = "splitFlap1/reset";
 
 const int NUMBER_OF_SPLIT_FLAPS = 3;
 const int MAX_SPLIT_FLAPS = 8;
@@ -15,6 +16,7 @@ const int SR_CLOCK_PIN = 23;
 const int SR_DATA_PIN = 22;
 const int SENSOR_PIN = 19;
 const int DIR_PIN = 18;
+const int SLEEP_PIN = 5;
 
 const uint8_t flaps[NUMBER_OF_FLAPS] = {
     ' ',
