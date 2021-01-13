@@ -94,7 +94,7 @@ void setup() {
 
     // TODO: Uncomment this when sensors installed
     // Ensure all split flaps start from blank
-    // splitFlapArray.resetFlaps();
+    splitFlapArray.resetFlaps();
 }
 
 void loop() {

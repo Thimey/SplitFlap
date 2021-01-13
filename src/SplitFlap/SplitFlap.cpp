@@ -73,9 +73,6 @@ void SplitFlap::setFlapTarget(uint8_t flapCharacter)
 {
     const int flapTargetIndex = SplitFlap::getFlapIndex(flapCharacter);
     const int flapsToTarget = SplitFlap::getFlapsToRotate(flapTargetIndex);
-    Serial.println(flapCharacter);
-    Serial.println(flapTargetIndex);
-    Serial.println(flapsToTarget);
 
     SplitFlap::flapTargetIndex = flapTargetIndex;
     SplitFlap::stepsToTarget = SplitFlap::getStepsToRotate(flapsToTarget);

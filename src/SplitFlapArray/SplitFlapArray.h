@@ -11,6 +11,7 @@ class SplitFlapArray {
         void shiftOutSteps(uint8_t shiftInput);
         void stepSplitFlapArrayOnce(uint8_t shiftInput);
         void stepSplitFlapArray();
+        void stepSingleSplitFlap(int flapIndexToStep);
         bool hasSplitFlapArrayReachedTarget();
 
     public:

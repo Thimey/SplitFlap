@@ -17,9 +17,9 @@ uint8_t SplitFlapArray::toShiftInput(bool shouldStepValues[NUMBER_OF_SPLIT_FLAPS
 {
     uint8_t shiftInput = 0;
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
-    if (shouldStepValues[i]) {
-        shiftInput |= 1 << (MAX_SPLIT_FLAPS - 1 - i);
-    }
+        if (shouldStepValues[i]) {
+            shiftInput |= 1 << (MAX_SPLIT_FLAPS - 1 - i);
+        }
     }
 
     return shiftInput;
@@ -41,6 +41,18 @@ void SplitFlapArray::stepSplitFlapArrayOnce(uint8_t shiftInput)
     delayMicroseconds(PULSE_DELAY);
     SplitFlapArray::shiftOutSteps(0);
     delayMicroseconds(PULSE_DELAY);
+}
+
+void SplitFlapArray::stepSingleSplitFlap(int flapIndexToStep)
+{
+    bool splitFlapsToStep[NUMBER_OF_SPLIT_FLAPS];
+    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+        splitFlapsToStep[i] = i == flapIndexToStep;
+    }
+
+    const uint8_t shiftInput = SplitFlapArray::toShiftInput(splitFlapsToStep);
+
+    SplitFlapArray::stepSplitFlapArrayOnce(shiftInput);
 }
 
 void SplitFlapArray::stepSplitFlapArray()
@@ -82,19 +94,19 @@ void SplitFlapArray::ISR_Sensor()
 
 void SplitFlapArray::resetFlaps()
 {
+    const int MAX_STEPS_TO_RESET = 2 * STEPS_PER_REVOLUTION;
+
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
         // Reset the flap targets for each splitFlap
         SplitFlapArray::splitFlaps[i].reset();
 
+        int stepCount = 0;
+
         // Step through flaps, till sensor triggered.
-        // Cap steps to two rotations - if sensor hasn't triggered by then something is broken
-        int stepCounter = 0;
-        while (
-            SplitFlapArray::splitFlaps[i].isResetting()
-            && stepCounter < 2 * STEPS_PER_REVOLUTION
-        ) {
-            stepSplitFlapArrayOnce(B11111111);
-            ++stepCounter;
+        // Stop resetting if two revolutions have stepped - this means something is broken.
+        while (SplitFlapArray::splitFlaps[i].isResetting() && stepCount < MAX_STEPS_TO_RESET) {
+            SplitFlapArray::stepSingleSplitFlap(i);
+            ++stepCount;
         }
     }
 }
