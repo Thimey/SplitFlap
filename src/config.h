@@ -2,17 +2,17 @@
 
 #include <Arduino.h>
 
-#define WORD_SUB_TOPIC "splitFlap1/word"
+const String WORD_SUB_TOPIC = "splitFlap1/word";
 
-#define NUMBER_OF_SPLIT_FLAPS (3)
-#define MAX_SPLIT_FLAPS (8)
-#define NUMBER_OF_FLAPS (50)
-#define STEPS_PER_REVOLUTION (200)
+const int NUMBER_OF_SPLIT_FLAPS = 3;
+const int MAX_SPLIT_FLAPS = 8;
+const int NUMBER_OF_FLAPS = 50;
+const int STEPS_PER_REVOLUTION = 200;
 
+// Pinouts
 const int SR_LATCH_PIN = 21;
 const int SR_CLOCK_PIN = 23;
 const int SR_DATA_PIN = 22;
-
 const int SENSOR_PIN = 19;
 const int DIR_PIN = 18;
 
