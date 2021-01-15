@@ -83,6 +83,17 @@ bool SplitFlapArray::hasSplitFlapArrayReachedTarget()
     return true;
 }
 
+void SplitFlapArray::enableMotors()
+{
+    digitalWrite(ENABLE_PIN, LOW);
+}
+
+void SplitFlapArray::disableMotors()
+{
+    // Cuts current to motors
+    digitalWrite(ENABLE_PIN, HIGH);
+}
+
 void SplitFlapArray::ISR_Sensor()
 {
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
@@ -94,6 +105,8 @@ void SplitFlapArray::ISR_Sensor()
 
 void SplitFlapArray::resetFlaps()
 {
+    SplitFlapArray::enableMotors();
+
     const int MAX_STEPS_TO_RESET = 2 * STEPS_PER_REVOLUTION;
 
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
@@ -109,6 +122,8 @@ void SplitFlapArray::resetFlaps()
             ++stepCount;
         }
     }
+
+    SplitFlapArray::disableMotors();
 }
 
 void SplitFlapArray::setWord(const char* word)
@@ -127,7 +142,13 @@ void SplitFlapArray::setWord(const char* word)
 
 void SplitFlapArray::loop()
 {
-    while (!SplitFlapArray::hasSplitFlapArrayReachedTarget()) {
-        SplitFlapArray::stepSplitFlapArray();
+    if (!SplitFlapArray::hasSplitFlapArrayReachedTarget()) {
+        SplitFlapArray::enableMotors();
+
+        while (!SplitFlapArray::hasSplitFlapArrayReachedTarget()) {
+            SplitFlapArray::stepSplitFlapArray();
+        }
+
+        SplitFlapArray::disableMotors();
     }
 }

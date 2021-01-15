@@ -72,7 +72,7 @@ void setup() {
     pinMode(SR_CLOCK_PIN, OUTPUT);
     pinMode(SR_DATA_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
-    pinMode(SLEEP_PIN, OUTPUT);
+    pinMode(ENABLE_PIN, OUTPUT);
     pinMode(SENSOR_PIN, INPUT);
 
     digitalWrite(DIR_PIN, LOW);

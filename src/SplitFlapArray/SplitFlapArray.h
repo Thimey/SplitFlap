@@ -13,6 +13,8 @@ class SplitFlapArray {
         void stepSplitFlapArray();
         void stepSingleSplitFlap(int flapIndexToStep);
         bool hasSplitFlapArrayReachedTarget();
+        void enableMotors();
+        void disableMotors();
 
     public:
         SplitFlapArray();

@@ -16,7 +16,7 @@ const int SR_CLOCK_PIN = 23;
 const int SR_DATA_PIN = 22;
 const int SENSOR_PIN = 19;
 const int DIR_PIN = 18;
-const int SLEEP_PIN = 5;
+const int ENABLE_PIN = 16;
 
 const uint8_t flaps[NUMBER_OF_FLAPS] = {
     ' ',
