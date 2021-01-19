@@ -7,10 +7,11 @@
 
 SplitFlapArray::SplitFlapArray()
 {
-  for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
-    String name = "splitFlap" + i;
-    SplitFlapArray::splitFlaps[i] = SplitFlap(name);
-  }
+    // Initialise SplitFlap objects
+    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+        String name = "splitFlap" + i;
+        SplitFlapArray::splitFlaps[i] = SplitFlap(name);
+    }
 };
 
 uint8_t SplitFlapArray::toShiftInput(bool shouldStepValues[NUMBER_OF_SPLIT_FLAPS])
