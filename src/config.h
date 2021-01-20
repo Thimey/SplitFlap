@@ -11,10 +11,15 @@ const int NUMBER_OF_FLAPS = 50;
 const int STEPS_PER_REVOLUTION = 200;
 
 // Pinouts
-const int SR_LATCH_PIN = 21;
-const int SR_CLOCK_PIN = 23;
-const int SR_DATA_PIN = 22;
-const int SENSOR_PIN = 19;
+const int SR_DRIVER_LATCH_PIN = 21;
+const int SR_DRIVER_CLOCK_PIN = 23;
+const int SR_DRIVER_DATA_PIN = 22;
+
+const int SR_SENSOR_LOAD_PIN = 25;
+const int SR_SENSOR_CLOCK_PIN = 14;
+const int SR_SENSOR_DATA_PIN = 26;
+const int SR_SENSOR_CLOCK_ENABLE_PIN = 27;
+
 const int DIR_PIN = 18;
 const int ENABLE_PIN = 16;
 

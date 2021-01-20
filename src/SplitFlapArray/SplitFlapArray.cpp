@@ -29,11 +29,11 @@ uint8_t SplitFlapArray::toShiftInput(bool shouldStepValues[NUMBER_OF_SPLIT_FLAPS
 void SplitFlapArray::shiftOutSteps(uint8_t shiftInput)
 {
     // Prevent data from being released
-    digitalWrite(SR_LATCH_PIN, LOW);
+    digitalWrite(SR_DRIVER_LATCH_PIN, LOW);
     // Write the step data to register
-    shiftOut(SR_DATA_PIN, SR_CLOCK_PIN, LSBFIRST, shiftInput);
+    shiftOut(SR_DRIVER_DATA_PIN, SR_DRIVER_CLOCK_PIN, LSBFIRST, shiftInput);
     // Release the data
-    digitalWrite(SR_LATCH_PIN, HIGH);
+    digitalWrite(SR_DRIVER_LATCH_PIN, HIGH);
 }
 
 void SplitFlapArray::stepSplitFlapArrayOnce(uint8_t shiftInput)
@@ -104,25 +104,57 @@ void SplitFlapArray::ISR_Sensor()
     }
 }
 
+void print_byte(byte val)
+{
+    byte i;
+    for(byte i=0; i<=7; i++)
+    {
+      Serial.print(val >> i & 1, BIN); // Magic bit shift, if you care look up the <<, >>, and & operators
+    }
+    Serial.print("\n"); // Go to the next line, do not collect $200
+}
+
+byte SplitFlapArray::getSensorInput()
+{
+    // Write pulse to load pin
+    digitalWrite(SR_SENSOR_LOAD_PIN, LOW);
+    delayMicroseconds(5);
+    digitalWrite(SR_SENSOR_LOAD_PIN, HIGH);
+    delayMicroseconds(5);
+
+    // Get data from 74HC165
+    digitalWrite(SR_SENSOR_CLOCK_PIN, LOW);
+    digitalWrite(SR_SENSOR_CLOCK_ENABLE_PIN, LOW);
+    byte sensorInput = shiftIn(SR_SENSOR_DATA_PIN, SR_SENSOR_CLOCK_PIN, LSBFIRST);
+    digitalWrite(SR_SENSOR_CLOCK_ENABLE_PIN, HIGH);
+
+    // print_byte(~sensorInput);
+
+    return ~sensorInput;
+}
+
 void SplitFlapArray::resetFlaps()
 {
     SplitFlapArray::enableMotors();
 
-    const int MAX_STEPS_TO_RESET = 2 * STEPS_PER_REVOLUTION;
-
+    // Reset the flap targets for each splitFlap
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
-        // Reset the flap targets for each splitFlap
         SplitFlapArray::splitFlaps[i].reset();
-
-        int stepCount = 0;
-
-        // Step through flaps, till sensor triggered.
-        // Stop resetting if two revolutions have stepped - this means something is broken.
-        while (SplitFlapArray::splitFlaps[i].isResetting() && stepCount < MAX_STEPS_TO_RESET) {
-            SplitFlapArray::stepSingleSplitFlap(i);
-            ++stepCount;
-        }
     }
+
+    const int MAX_STEPS_TO_RESET = 2 * STEPS_PER_REVOLUTION;
+    int stepCount = 0;
+    byte sensorInput = SplitFlapArray::getSensorInput();
+
+    // Step through flaps, till sensor triggered.
+    // Stop resetting if two revolutions have stepped - this means something is broken.
+    while (sensorInput != 0 && stepCount < MAX_STEPS_TO_RESET) {
+        // Serial.println(sensorInput, BIN);
+        SplitFlapArray::stepSplitFlapArrayOnce(sensorInput);
+        sensorInput = SplitFlapArray::getSensorInput();
+        ++stepCount;
+    }
+
 
     SplitFlapArray::disableMotors();
 }

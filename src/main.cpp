@@ -68,16 +68,21 @@ void messageHandler(String &topic, String &payload) {
 void setup() {
     Serial.begin(9600);
 
-    pinMode(SR_LATCH_PIN, OUTPUT);
-    pinMode(SR_CLOCK_PIN, OUTPUT);
-    pinMode(SR_DATA_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
     pinMode(ENABLE_PIN, OUTPUT);
-    pinMode(SENSOR_PIN, INPUT);
+
+    pinMode(SR_DRIVER_LATCH_PIN, OUTPUT);
+    pinMode(SR_DRIVER_CLOCK_PIN, OUTPUT);
+    pinMode(SR_DRIVER_DATA_PIN, OUTPUT);
+
+    pinMode(SR_SENSOR_LOAD_PIN, OUTPUT);
+    pinMode(SR_SENSOR_CLOCK_ENABLE_PIN, OUTPUT);
+    pinMode(SR_SENSOR_CLOCK_PIN, OUTPUT);
+    pinMode(SR_SENSOR_DATA_PIN, INPUT);
 
     digitalWrite(DIR_PIN, LOW);
 
-    attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), ISR_Sensor, FALLING);
+    // attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), ISR_Sensor, FALLING);
 
     // Connect to the configured WiFi
     connectWiFi();
