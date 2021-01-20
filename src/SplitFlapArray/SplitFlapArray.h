@@ -15,6 +15,7 @@ class SplitFlapArray {
         bool hasSplitFlapArrayReachedTarget();
         void enableMotors();
         void disableMotors();
+        byte getSensorInput();
 
     public:
         SplitFlapArray();

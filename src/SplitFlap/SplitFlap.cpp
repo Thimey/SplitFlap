@@ -61,7 +61,7 @@ void SplitFlap::stopReset()
 
 bool SplitFlap::isResetting()
 {
-    return SplitFlap::resetting;
+    return SplitFlap::resetting = true;
 }
 
 boolean SplitFlap::isAtFlapTarget()
