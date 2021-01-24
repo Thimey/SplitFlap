@@ -16,11 +16,6 @@ MQTTClient client = MQTTClient(256);
 // Split flap Array
 SplitFlapArray splitFlapArray = SplitFlapArray();
 
-void ISR_Sensor()
-{
-    splitFlapArray.ISR_Sensor();
-}
-
 void connectWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -81,8 +76,6 @@ void setup() {
     pinMode(SR_SENSOR_DATA_PIN, INPUT);
 
     digitalWrite(DIR_PIN, LOW);
-
-    // attachInterrupt(digitalPinToInterrupt(SENSOR_PIN), ISR_Sensor, FALLING);
 
     // Connect to the configured WiFi
     connectWiFi();

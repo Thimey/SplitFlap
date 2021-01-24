@@ -95,25 +95,6 @@ void SplitFlapArray::disableMotors()
     digitalWrite(ENABLE_PIN, HIGH);
 }
 
-void SplitFlapArray::ISR_Sensor()
-{
-    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
-        if (SplitFlapArray::splitFlaps[i].isResetting()) {
-            SplitFlapArray::splitFlaps[i].stopReset();
-        }
-    }
-}
-
-void print_byte(byte val)
-{
-    byte i;
-    for(byte i=0; i<=7; i++)
-    {
-      Serial.print(val >> i & 1, BIN); // Magic bit shift, if you care look up the <<, >>, and & operators
-    }
-    Serial.print("\n"); // Go to the next line, do not collect $200
-}
-
 byte SplitFlapArray::getSensorInput()
 {
     // Write pulse to load pin
@@ -128,8 +109,7 @@ byte SplitFlapArray::getSensorInput()
     byte sensorInput = shiftIn(SR_SENSOR_DATA_PIN, SR_SENSOR_CLOCK_PIN, LSBFIRST);
     digitalWrite(SR_SENSOR_CLOCK_ENABLE_PIN, HIGH);
 
-    // print_byte(~sensorInput);
-
+    // Since bits are inverted from shift register, invert them for actual sensor values
     return ~sensorInput;
 }
 
@@ -149,12 +129,10 @@ void SplitFlapArray::resetFlaps()
     // Step through flaps, till sensor triggered.
     // Stop resetting if two revolutions have stepped - this means something is broken.
     while (sensorInput != 0 && stepCount < MAX_STEPS_TO_RESET) {
-        // Serial.println(sensorInput, BIN);
         SplitFlapArray::stepSplitFlapArrayOnce(sensorInput);
         sensorInput = SplitFlapArray::getSensorInput();
         ++stepCount;
     }
-
 
     SplitFlapArray::disableMotors();
 }
