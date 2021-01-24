@@ -22,7 +22,5 @@ class SplitFlapArray {
 
         void setWord(const char* word);
         void resetFlaps();
-        void ISR_Sensor();
-
         void loop();
 };
