@@ -42,7 +42,7 @@ void connectAWS() {
     }
 
     // Subscribe to topics
-    client.subscribe(WORD_SUB_TOPIC);
+    client.subscribe(DISPLAY_SUB_TOPIC);
     client.subscribe(RESET_SUB_TOPIC);
 
     Serial.println("AWS IoT Connected!");
@@ -52,9 +52,11 @@ void messageHandler(String &topic, String &payload) {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, payload);
 
-    if (topic == WORD_SUB_TOPIC) {
-        const char* word = doc["word"];
-        splitFlapArray.setWord(word);
+    if (topic == DISPLAY_SUB_TOPIC) {
+        JsonArray characterDisplays = doc["characterDisplays"].as<JsonArray>();
+        for (JsonVariant characterDisplay : characterDisplays) {
+            splitFlapArray.queueCharacterDisplay(characterDisplay.as<char*>());
+        }
     } else if (topic == RESET_SUB_TOPIC) {
         splitFlapArray.resetFlaps();
     }
@@ -95,7 +97,7 @@ void setup() {
     connectAWS();
 
     // Ensure all split flaps start from blank
-    splitFlapArray.resetFlaps();
+    // splitFlapArray.resetFlaps();
 }
 
 void loop() {

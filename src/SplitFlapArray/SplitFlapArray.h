@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cppQueue.h>
 #include "config.h"
 #include "SplitFlap/SplitFlap.h"
 
@@ -13,14 +14,17 @@ class SplitFlapArray {
         void stepSplitFlapArray();
         void stepSingleSplitFlap(int flapIndexToStep);
         bool hasSplitFlapArrayReachedTarget();
+        void setCharacterDisplay(const char* word);
+        void stepToCurrentCharacterDisplay();
         void enableMotors();
         void disableMotors();
         byte getSensorInput();
+        cppQueue words;
 
     public:
         SplitFlapArray();
 
-        void setWord(const char* word);
+        void queueCharacterDisplay(const char* word);
         void resetFlaps();
         void loop();
 };
