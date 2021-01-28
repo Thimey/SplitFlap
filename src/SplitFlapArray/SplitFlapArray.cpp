@@ -6,7 +6,7 @@
 #include "SplitFlapArray.h"
 
 SplitFlapArray::SplitFlapArray() :
-    words(NUMBER_OF_SPLIT_FLAPS * sizeof(char), MAX_WORD_COUNT, FIFO)
+    characterDisplays(NUMBER_OF_SPLIT_FLAPS * sizeof(char), MAX_CHARACTER_DISPLAY_QUEUE, FIFO)
 {
     // Initialise SplitFlap objects
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
@@ -138,23 +138,23 @@ void SplitFlapArray::resetFlaps()
     SplitFlapArray::disableMotors();
 }
 
-void SplitFlapArray::setCharacterDisplay(const char* word)
+void SplitFlapArray::setCharacterDisplay(const char* characters)
 {
-    int wordIndex = 0;
-    char character = word[0];
+    int characterIndex = 0;
+    char character = characters[0];
 
     while (character != '\0') {
-        character = word[wordIndex];
-        if (character && wordIndex < NUMBER_OF_SPLIT_FLAPS) {
-            SplitFlapArray::splitFlaps[wordIndex].setFlapTarget(character);
+        character = characters[characterIndex];
+        if (character && characterIndex < NUMBER_OF_SPLIT_FLAPS) {
+            SplitFlapArray::splitFlaps[characterIndex].setFlapTarget(character);
         }
-        ++wordIndex;
+        ++characterIndex;
     }
 }
 
-void SplitFlapArray::queueCharacterDisplay(const char* word)
+void SplitFlapArray::queueCharacterDisplay(const char* characters)
 {
-    SplitFlapArray::words.push(word);
+    SplitFlapArray::characterDisplays.push(characters);
 }
 
 void SplitFlapArray::stepToCurrentCharacterDisplay()
@@ -172,9 +172,9 @@ void SplitFlapArray::loop()
 {
     if (!SplitFlapArray::hasSplitFlapArrayReachedTarget()) {
         SplitFlapArray::stepToCurrentCharacterDisplay();
-    } else if (!SplitFlapArray::words.isEmpty()) {
-        char* word;
-        SplitFlapArray::words.pop(&word);
-        SplitFlapArray::setCharacterDisplay(word);
+    } else if (!SplitFlapArray::characterDisplays.isEmpty()) {
+        char* characters;
+        SplitFlapArray::characterDisplays.pop(&characters);
+        SplitFlapArray::setCharacterDisplay(characters);
     }
 }
