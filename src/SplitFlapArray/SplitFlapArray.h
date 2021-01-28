@@ -14,17 +14,17 @@ class SplitFlapArray {
         void stepSplitFlapArray();
         void stepSingleSplitFlap(int flapIndexToStep);
         bool hasSplitFlapArrayReachedTarget();
-        void setCharacterDisplay(const char* word);
+        void setCharacterDisplay(const char* characters);
         void stepToCurrentCharacterDisplay();
         void enableMotors();
         void disableMotors();
         byte getSensorInput();
-        cppQueue words;
+        cppQueue characterDisplays;
 
     public:
         SplitFlapArray();
 
-        void queueCharacterDisplay(const char* word);
+        void queueCharacterDisplay(const char* characters);
         void resetFlaps();
         void loop();
 };
