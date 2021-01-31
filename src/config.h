@@ -10,6 +10,7 @@ const int MAX_SPLIT_FLAPS = 8;
 const int NUMBER_OF_FLAPS = 50;
 const int STEPS_PER_REVOLUTION = 200;
 const int MAX_CHARACTER_DISPLAY_QUEUE = 10;
+const int DEFAULT_PAUSE_MS = 4000;
 
 // Pinouts
 const int SR_DRIVER_LATCH_PIN = 21;
