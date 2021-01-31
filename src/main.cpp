@@ -55,7 +55,7 @@ void messageHandler(String &topic, String &payload) {
     if (topic == DISPLAY_SUB_TOPIC) {
         JsonArray characterDisplays = doc["characterDisplays"].as<JsonArray>();
         for (JsonVariant characterDisplay : characterDisplays) {
-            splitFlapArray.queueCharacterDisplay(characterDisplay.as<char*>());
+            splitFlapArray.queueCharacterDisplay(characterDisplay.as<String>());
         }
     } else if (topic == RESET_SUB_TOPIC) {
         splitFlapArray.resetFlaps();
@@ -97,7 +97,7 @@ void setup() {
     connectAWS();
 
     // Ensure all split flaps start from blank
-    // splitFlapArray.resetFlaps();
+    splitFlapArray.resetFlaps();
 }
 
 void loop() {

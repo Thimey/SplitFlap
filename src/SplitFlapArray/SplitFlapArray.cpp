@@ -6,7 +6,8 @@
 #include "SplitFlapArray.h"
 
 SplitFlapArray::SplitFlapArray() :
-    characterDisplays(NUMBER_OF_SPLIT_FLAPS * sizeof(char), MAX_CHARACTER_DISPLAY_QUEUE, FIFO)
+    characterDisplays(sizeof(String), MAX_CHARACTER_DISPLAY_QUEUE, FIFO)
+    , pauseQueueTime(DEFAULT_PAUSE_MS)
 {
     // Initialise SplitFlap objects
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
@@ -138,23 +139,19 @@ void SplitFlapArray::resetFlaps()
     SplitFlapArray::disableMotors();
 }
 
-void SplitFlapArray::setCharacterDisplay(const char* characters)
+void SplitFlapArray::setCharacterDisplay(String characters)
 {
-    int characterIndex = 0;
-    char character = characters[0];
-
-    while (character != '\0') {
-        character = characters[characterIndex];
-        if (character && characterIndex < NUMBER_OF_SPLIT_FLAPS) {
-            SplitFlapArray::splitFlaps[characterIndex].setFlapTarget(character);
+    for (int i = 0; i < characters.length(); ++i) {
+        char character = characters[i];
+        if (character && i < NUMBER_OF_SPLIT_FLAPS) {
+            SplitFlapArray::splitFlaps[i].setFlapTarget(character);
         }
-        ++characterIndex;
     }
 }
 
-void SplitFlapArray::queueCharacterDisplay(const char* characters)
+void SplitFlapArray::queueCharacterDisplay(String characters)
 {
-    SplitFlapArray::characterDisplays.push(characters);
+    SplitFlapArray::characterDisplays.push(&characters);
 }
 
 void SplitFlapArray::stepToCurrentCharacterDisplay()
@@ -173,7 +170,7 @@ void SplitFlapArray::loop()
     if (!SplitFlapArray::hasSplitFlapArrayReachedTarget()) {
         SplitFlapArray::stepToCurrentCharacterDisplay();
     } else if (!SplitFlapArray::characterDisplays.isEmpty()) {
-        char* characters;
+        String characters;
         SplitFlapArray::characterDisplays.pop(&characters);
         SplitFlapArray::setCharacterDisplay(characters);
     }
