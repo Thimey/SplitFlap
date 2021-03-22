@@ -41,9 +41,9 @@ void SplitFlapArray::shiftOutSteps(uint8_t shiftInput)
 void SplitFlapArray::stepSplitFlapArrayOnce(uint8_t shiftInput)
 {
     SplitFlapArray::shiftOutSteps(shiftInput);
-    delayMicroseconds(PULSE_DELAY);
+    delayMicroseconds(SplitFlapArray::stepDelayMicro);
     SplitFlapArray::shiftOutSteps(0);
-    delayMicroseconds(PULSE_DELAY);
+    delayMicroseconds(SplitFlapArray::stepDelayMicro);
 }
 
 void SplitFlapArray::stepSingleSplitFlap(int flapIndexToStep)
@@ -115,6 +115,15 @@ byte SplitFlapArray::getSensorInput()
     return ~sensorInput;
 }
 
+void printBits(byte myByte){
+ for(byte mask = 0x80; mask; mask >>= 1){
+   if(mask  & myByte)
+       Serial.print('1');
+   else
+       Serial.print('0');
+ }
+}
+
 void SplitFlapArray::resetFlaps()
 {
     SplitFlapArray::enableMotors();
@@ -127,12 +136,15 @@ void SplitFlapArray::resetFlaps()
     const int MAX_STEPS_TO_RESET = 2 * STEPS_PER_REVOLUTION;
     int stepCount = 0;
     byte sensorInput = SplitFlapArray::getSensorInput();
+    // Serial.println(sensorInput, BIN);
+    // printBits(sensorInput);
 
     // Step through flaps, till sensor triggered.
     // Stop resetting if two revolutions have stepped - this means something is broken.
     while (sensorInput != 0 && stepCount < MAX_STEPS_TO_RESET) {
         SplitFlapArray::stepSplitFlapArrayOnce(sensorInput);
         sensorInput = SplitFlapArray::getSensorInput();
+        // Serial.println(sensorInput, BIN);
         ++stepCount;
     }
 
@@ -149,8 +161,9 @@ void SplitFlapArray::setCharacterDisplay(String characters)
     }
 }
 
-void SplitFlapArray::queueCharacterDisplay(String characters)
+void SplitFlapArray::queueCharacterDisplay(String characters, int stepDelay = DEFAULT_PULSE_DELAY)
 {
+    SplitFlapArray::stepDelayMicro = stepDelay;
     SplitFlapArray::characterDisplays.push(&characters);
 }
 

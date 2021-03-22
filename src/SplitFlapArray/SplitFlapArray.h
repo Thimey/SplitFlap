@@ -9,6 +9,7 @@ class SplitFlapArray {
         SplitFlap splitFlaps[NUMBER_OF_SPLIT_FLAPS];
         cppQueue characterDisplays;
         int pauseQueueTime;
+        int stepDelayMicro;
 
         uint8_t toShiftInput(bool shouldStepValues[NUMBER_OF_SPLIT_FLAPS]);
         void shiftOutSteps(uint8_t shiftInput);
@@ -25,7 +26,7 @@ class SplitFlapArray {
     public:
         SplitFlapArray();
 
-        void queueCharacterDisplay(String characters);
+        void queueCharacterDisplay(String characters, int stepDelay);
         void resetFlaps();
         void loop();
 };
