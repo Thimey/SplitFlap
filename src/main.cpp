@@ -54,8 +54,9 @@ void messageHandler(String &topic, String &payload) {
 
     if (topic == DISPLAY_SUB_TOPIC) {
         JsonArray characterDisplays = doc["characterDisplays"].as<JsonArray>();
+        int stepDelay = doc["stepDelay"].as<int>();
         for (JsonVariant characterDisplay : characterDisplays) {
-            splitFlapArray.queueCharacterDisplay(characterDisplay.as<String>());
+            splitFlapArray.queueCharacterDisplay(characterDisplay.as<String>(), stepDelay);
         }
     } else if (topic == RESET_SUB_TOPIC) {
         splitFlapArray.resetFlaps();

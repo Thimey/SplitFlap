@@ -5,10 +5,13 @@
 const String DISPLAY_SUB_TOPIC = "splitFlap1/display";
 const String RESET_SUB_TOPIC = "splitFlap1/reset";
 
-const int NUMBER_OF_SPLIT_FLAPS = 3;
+// Be sure to adjust the driver stepper micro stepping pins to match
+const int MICRO_STEPS = 16;
+
+const int NUMBER_OF_SPLIT_FLAPS = 2;
 const int MAX_SPLIT_FLAPS = 8;
 const int NUMBER_OF_FLAPS = 50;
-const int STEPS_PER_REVOLUTION = 200;
+const int STEPS_PER_REVOLUTION = MICRO_STEPS * 200;
 const int MAX_CHARACTER_DISPLAY_QUEUE = 10;
 const int DEFAULT_PAUSE_MS = 4000;
 
@@ -33,5 +36,5 @@ const uint8_t flaps[NUMBER_OF_FLAPS] = {
     '.', ',', ';', ':', '?', '-', '!', '$', '%', '(', ')', '\'', '#'
 };
 
-const int PULSE_DELAY = 5000;
+const int DEFAULT_PULSE_DELAY = 7000;
 
