@@ -147,8 +147,6 @@ void SplitFlapArray::resetFlaps()
         // Serial.println(sensorInput, BIN);
         ++stepCount;
     }
-
-    SplitFlapArray::disableMotors();
 }
 
 void SplitFlapArray::setCharacterDisplay(String characters)
@@ -174,8 +172,6 @@ void SplitFlapArray::stepToCurrentCharacterDisplay()
     while (!SplitFlapArray::hasSplitFlapArrayReachedTarget()) {
         SplitFlapArray::stepSplitFlapArray();
     }
-
-    SplitFlapArray::disableMotors();
 }
 
 void SplitFlapArray::loop()

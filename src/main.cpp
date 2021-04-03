@@ -44,6 +44,8 @@ void connectAWS() {
     // Subscribe to topics
     client.subscribe(DISPLAY_SUB_TOPIC);
     client.subscribe(RESET_SUB_TOPIC);
+    client.subscribe(DISABLE_MOTORS_TOPIC);
+    client.subscribe(ENABLE_MOTORS_TOPIC);
 
     Serial.println("AWS IoT Connected!");
 }
@@ -60,6 +62,10 @@ void messageHandler(String &topic, String &payload) {
         }
     } else if (topic == RESET_SUB_TOPIC) {
         splitFlapArray.resetFlaps();
+    } else if (topic == DISABLE_MOTORS_TOPIC) {
+        splitFlapArray.disableMotors();
+    } else if (topic == ENABLE_MOTORS_TOPIC) {
+        splitFlapArray.enableMotors();
     }
 }
 
@@ -99,6 +105,7 @@ void setup() {
 
     // Ensure all split flaps start from blank
     splitFlapArray.resetFlaps();
+    splitFlapArray.enableMotors();
 }
 
 void loop() {
