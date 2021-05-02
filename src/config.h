@@ -6,6 +6,7 @@ const String DISPLAY_SUB_TOPIC = "splitFlap1/display";
 const String RESET_SUB_TOPIC = "splitFlap1/reset";
 const String DISABLE_MOTORS_TOPIC = "splitFlap1/disableMotors";
 const String ENABLE_MOTORS_TOPIC = "splitFlap1/enableMotors";
+const String GET_SENSOR_INPUT_TOPIC = "splitFlap1/getSensorInput";
 
 // Be sure to adjust the driver stepper micro stepping pins to match
 const int MICRO_STEPS = 16;

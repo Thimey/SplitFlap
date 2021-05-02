@@ -46,6 +46,7 @@ void connectAWS() {
     client.subscribe(RESET_SUB_TOPIC);
     client.subscribe(DISABLE_MOTORS_TOPIC);
     client.subscribe(ENABLE_MOTORS_TOPIC);
+    client.subscribe(GET_SENSOR_INPUT_TOPIC);
 
     Serial.println("AWS IoT Connected!");
 }
@@ -66,6 +67,8 @@ void messageHandler(String &topic, String &payload) {
         splitFlapArray.disableMotors();
     } else if (topic == ENABLE_MOTORS_TOPIC) {
         splitFlapArray.enableMotors();
+    } else if (topic == GET_SENSOR_INPUT_TOPIC) {
+        splitFlapArray.printSensorInput();
     }
 }
 
@@ -84,7 +87,7 @@ void setup() {
     pinMode(SR_SENSOR_CLOCK_PIN, OUTPUT);
     pinMode(SR_SENSOR_DATA_PIN, INPUT);
 
-    digitalWrite(DIR_PIN, LOW);
+    digitalWrite(DIR_PIN, HIGH);
 
     // Connect to the configured WiFi
     connectWiFi();
@@ -102,10 +105,6 @@ void setup() {
 
     // Connect device to AWS iot
     connectAWS();
-
-    // Ensure all split flaps start from blank
-    splitFlapArray.resetFlaps();
-    splitFlapArray.enableMotors();
 }
 
 void loop() {

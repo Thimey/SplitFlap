@@ -19,12 +19,13 @@ class SplitFlapArray {
         bool hasSplitFlapArrayReachedTarget();
         void setCharacterDisplay(String characters);
         void stepToCurrentCharacterDisplay();
-
         byte getSensorInput();
+
 
     public:
         SplitFlapArray();
 
+        void printSensorInput();
         void queueCharacterDisplay(String characters, int stepDelay);
         void resetFlaps();
         void enableMotors();

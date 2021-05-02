@@ -122,6 +122,12 @@ void printBits(byte myByte){
    else
        Serial.print('0');
  }
+ Serial.println("");
+}
+
+void SplitFlapArray::printSensorInput()
+{
+    printBits(SplitFlapArray::getSensorInput());
 }
 
 void SplitFlapArray::resetFlaps()
@@ -133,19 +139,14 @@ void SplitFlapArray::resetFlaps()
         SplitFlapArray::splitFlaps[i].reset();
     }
 
-    const int MAX_STEPS_TO_RESET = 2 * STEPS_PER_REVOLUTION;
-    int stepCount = 0;
     byte sensorInput = SplitFlapArray::getSensorInput();
     // Serial.println(sensorInput, BIN);
     // printBits(sensorInput);
 
-    // Step through flaps, till sensor triggered.
-    // Stop resetting if two revolutions have stepped - this means something is broken.
-    while (sensorInput != 0 && stepCount < MAX_STEPS_TO_RESET) {
+    // Step through flaps, till all sensors triggered.
+    while (sensorInput != 0) {
         SplitFlapArray::stepSplitFlapArrayOnce(sensorInput);
         sensorInput = SplitFlapArray::getSensorInput();
-        // Serial.println(sensorInput, BIN);
-        ++stepCount;
     }
 }
 
