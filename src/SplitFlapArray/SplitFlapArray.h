@@ -16,6 +16,7 @@ class SplitFlapArray {
         void stepSplitFlapArrayOnce(uint8_t shiftInput);
         void stepSplitFlapArray();
         void stepSingleSplitFlap(int flapIndexToStep);
+        void stepAllSensorsOff();
         bool hasSplitFlapArrayReachedTarget();
         void setCharacterDisplay(String characters);
         void stepToCurrentCharacterDisplay();
@@ -30,5 +31,6 @@ class SplitFlapArray {
         void resetFlaps();
         void enableMotors();
         void disableMotors();
+        void stepAll(int rotations);
         void loop();
 };

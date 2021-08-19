@@ -23,8 +23,9 @@ void connectWiFi() {
     Serial.println("Connecting to Wi-Fi");
 
     while (WiFi.status() != WL_CONNECTED){
-        delay(500);
+        delay(1000);
         Serial.print(".");
+        // WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     }
 }
 
@@ -67,6 +68,7 @@ void messageHandler(String &topic, String &payload) {
         splitFlapArray.disableMotors();
     } else if (topic == ENABLE_MOTORS_TOPIC) {
         splitFlapArray.enableMotors();
+        splitFlapArray.stepAll(1);
     } else if (topic == GET_SENSOR_INPUT_TOPIC) {
         splitFlapArray.printSensorInput();
     }

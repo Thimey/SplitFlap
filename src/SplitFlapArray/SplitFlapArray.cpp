@@ -5,6 +5,16 @@
 #include "SplitFlap/SplitFlap.h"
 #include "SplitFlapArray.h"
 
+void printBits(byte myByte){
+ for(byte mask = 0x80; mask; mask >>= 1){
+   if(mask  & myByte)
+       Serial.print('1');
+   else
+       Serial.print('0');
+ }
+ Serial.println("");
+}
+
 SplitFlapArray::SplitFlapArray() :
     characterDisplays(sizeof(String), MAX_CHARACTER_DISPLAY_QUEUE, FIFO)
     , pauseQueueTime(DEFAULT_PAUSE_MS)
@@ -115,39 +125,58 @@ byte SplitFlapArray::getSensorInput()
     return ~sensorInput;
 }
 
-void printBits(byte myByte){
- for(byte mask = 0x80; mask; mask >>= 1){
-   if(mask  & myByte)
-       Serial.print('1');
-   else
-       Serial.print('0');
- }
- Serial.println("");
-}
-
 void SplitFlapArray::printSensorInput()
 {
     printBits(SplitFlapArray::getSensorInput());
+}
+
+void SplitFlapArray::stepAllSensorsOff()
+{
+    byte sensorInput = SplitFlapArray::getSensorInput();
+
+    // Step through flaps, until all sensors are off
+    // TODO: Dynamically compute binary value for available flaps
+    while (sensorInput != B11111110)
+    {
+        SplitFlapArray::stepSplitFlapArrayOnce(~sensorInput);
+        sensorInput = SplitFlapArray::getSensorInput();
+    }
 }
 
 void SplitFlapArray::resetFlaps()
 {
     SplitFlapArray::enableMotors();
 
-    // Reset the flap targets for each splitFlap
-    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
-        SplitFlapArray::splitFlaps[i].reset();
-    }
+    // Since hall effect sensors cover a range of flaps and we want only the first flap
+    // Step all flaps off motors
+    SplitFlapArray::stepAllSensorsOff();
 
     byte sensorInput = SplitFlapArray::getSensorInput();
-    // Serial.println(sensorInput, BIN);
-    // printBits(sensorInput);
 
     // Step through flaps, till all sensors triggered.
     while (sensorInput != 0) {
         SplitFlapArray::stepSplitFlapArrayOnce(sensorInput);
         sensorInput = SplitFlapArray::getSensorInput();
     }
+
+    // Reset the flap targets for each splitFlap
+    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+        SplitFlapArray::splitFlaps[i].reset();
+    }
+}
+
+void SplitFlapArray::stepAll(int rotations)
+{
+  SplitFlapArray::resetFlaps();
+
+  int completedRotations = 0;
+
+  while (completedRotations < rotations) {
+    for (int i = 0; i < NUMBER_OF_FLAPS; ++i) {
+      SplitFlapArray::stepSplitFlapArrayOnce(B11111110);
+    }
+    completedRotations = completedRotations + 1;
+  }
 }
 
 void SplitFlapArray::setCharacterDisplay(String characters)
