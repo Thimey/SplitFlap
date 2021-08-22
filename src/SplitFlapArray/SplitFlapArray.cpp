@@ -179,6 +179,25 @@ void SplitFlapArray::stepAll(int rotations)
   }
 }
 
+void SplitFlapArray::stepSplitFlapsOnce(bool flapsToStep[NUMBER_OF_SPLIT_FLAPS])
+{
+  bool splitFlapsToStep[NUMBER_OF_SPLIT_FLAPS];
+
+  // Update the internal state of each split flap that requires stepping
+  for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i)
+  {
+      if (flapsToStep[i]) {
+        bool isFlapAtTarget = SplitFlapArray::splitFlaps[i].step();
+
+        splitFlapsToStep[i] = !isFlapAtTarget;
+      }
+  }
+
+  const uint8_t shiftInput = SplitFlapArray::toShiftInput(splitFlapsToStep);
+
+  SplitFlapArray::stepSplitFlapArrayOnce(shiftInput);
+}
+
 void SplitFlapArray::setCharacterDisplay(String characters)
 {
     for (int i = 0; i < characters.length(); ++i) {

@@ -32,5 +32,6 @@ class SplitFlapArray {
         void enableMotors();
         void disableMotors();
         void stepAll(int rotations);
+        void stepSplitFlapsOnce(bool flapsToStep[NUMBER_OF_SPLIT_FLAPS]);
         void loop();
 };

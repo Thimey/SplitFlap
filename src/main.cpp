@@ -3,11 +3,22 @@
 #include <MQTTClient.h>
 #include <ArduinoJson.h>
 #include "WiFi.h"
+#include <TaskScheduler.h>
+
 
 #include "SplitFlap/SplitFlap.h"
 #include "SplitFlapArray/SplitFlapArray.h"
 #include "config.h"
 #include "secrets.h"
+
+
+Scheduler taskRunner;
+
+void stepDefaultSpeedDisplay();
+
+
+Task defaultSpeedDisplay(DEFAULT_PAUSE_MS, TASK_FOREVER, &stepDefaultSpeedDisplay, &taskRunner, true);
+
 
 // WiFi client
 WiFiClientSecure net = WiFiClientSecure();
@@ -15,6 +26,16 @@ WiFiClientSecure net = WiFiClientSecure();
 MQTTClient client = MQTTClient(256);
 // Split flap Array
 SplitFlapArray splitFlapArray = SplitFlapArray();
+
+
+void stepDefaultSpeedDisplay()
+{
+  bool allStepped = SplitFlapArray::stepDefaultSpeedDisplays();
+
+  if (allStepped) {
+    // Stop task
+  }
+}
 
 void connectWiFi() {
     WiFi.mode(WIFI_STA);
@@ -68,7 +89,6 @@ void messageHandler(String &topic, String &payload) {
         splitFlapArray.disableMotors();
     } else if (topic == ENABLE_MOTORS_TOPIC) {
         splitFlapArray.enableMotors();
-        splitFlapArray.stepAll(1);
     } else if (topic == GET_SENSOR_INPUT_TOPIC) {
         splitFlapArray.printSensorInput();
     }
