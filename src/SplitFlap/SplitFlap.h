@@ -14,9 +14,10 @@ class SplitFlap {
 
     public:
         SplitFlap();
-        SplitFlap(String name);
+        SplitFlap(String name, int callibrationSteps);
 
         String name;
+        int callibrationSteps;
         int stepsToTarget;
 
         boolean isAtFlapTarget();

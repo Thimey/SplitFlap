@@ -8,11 +8,12 @@ const int NULL_STEPS_TO_TARGET = -1;
 
 SplitFlap::SplitFlap() {}
 
-SplitFlap::SplitFlap(String name = "SplitFlap") :
+SplitFlap::SplitFlap(String name = "SplitFlap", int callibrationSteps = 0) :
     currentFlapIndex(0),
     flapTargetIndex(NULL_FLAP_TARGET_INDEX),
     resetting(false),
     name(name),
+    callibrationSteps(callibrationSteps),
     stepsToTarget(NULL_STEPS_TO_TARGET)
 {}
 
@@ -40,7 +41,7 @@ int SplitFlap::getFlapsToRotate(int desiredIndex)
 
 int SplitFlap::getStepsToRotate(int flapsToRotate)
 {
-    return flapsToRotate * (STEPS_PER_REVOLUTION / NUMBER_OF_FLAPS);
+    return flapsToRotate * (STEPS_PER_REVOLUTION / NUMBER_OF_FLAPS) + SplitFlap::callibrationSteps;
 }
 
 

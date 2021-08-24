@@ -22,7 +22,7 @@ SplitFlapArray::SplitFlapArray() :
     // Initialise SplitFlap objects
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
         String name = "splitFlap" + i;
-        SplitFlapArray::splitFlaps[i] = SplitFlap(name);
+        SplitFlapArray::splitFlaps[i] = SplitFlap(name, FLAP_CALLIPRATION_STEPS[i]);
     }
 };
 
@@ -136,7 +136,7 @@ void SplitFlapArray::stepAllSensorsOff()
 
     // Step through flaps, until all sensors are off
     // TODO: Dynamically compute binary value for available flaps
-    while (sensorInput != B11111110)
+    while (sensorInput != B11111111)
     {
         SplitFlapArray::stepSplitFlapArrayOnce(~sensorInput);
         sensorInput = SplitFlapArray::getSensorInput();
@@ -173,7 +173,7 @@ void SplitFlapArray::stepAll(int rotations)
 
   while (completedRotations < rotations) {
     for (int i = 0; i < NUMBER_OF_FLAPS; ++i) {
-      SplitFlapArray::stepSplitFlapArrayOnce(B11111110);
+      SplitFlapArray::stepSplitFlapArrayOnce(B11111111);
     }
     completedRotations = completedRotations + 1;
   }

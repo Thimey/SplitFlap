@@ -55,6 +55,7 @@ void connectAWS() {
 void messageHandler(String &topic, String &payload) {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, payload);
+    Serial.print("Messaged received");
 
     if (topic == DISPLAY_SUB_TOPIC) {
         JsonArray characterDisplays = doc["characterDisplays"].as<JsonArray>();
@@ -68,7 +69,7 @@ void messageHandler(String &topic, String &payload) {
         splitFlapArray.disableMotors();
     } else if (topic == ENABLE_MOTORS_TOPIC) {
         splitFlapArray.enableMotors();
-        splitFlapArray.stepAll(1);
+        // splitFlapArray.stepAll(1);
     } else if (topic == GET_SENSOR_INPUT_TOPIC) {
         splitFlapArray.printSensorInput();
     }

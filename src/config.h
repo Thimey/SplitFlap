@@ -11,7 +11,7 @@ const String GET_SENSOR_INPUT_TOPIC = "splitFlap1/getSensorInput";
 // Be sure to adjust the driver stepper micro stepping pins to match
 const int MICRO_STEPS = 16;
 
-const int NUMBER_OF_SPLIT_FLAPS = 7;
+const int NUMBER_OF_SPLIT_FLAPS = 8;
 const int MAX_SPLIT_FLAPS = 8;
 const int NUMBER_OF_FLAPS = 50;
 const int STEPS_PER_REVOLUTION = MICRO_STEPS * 200;
@@ -37,6 +37,10 @@ const uint8_t flaps[NUMBER_OF_FLAPS] = {
     't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2',
     '3', '4', '5', '6', '7', '8', '9', '(', ')', '.',
     ':', '\'', '=', '-', '+', '?', '$', '#', '!', '%'
+};
+
+const int FLAP_CALLIPRATION_STEPS[NUMBER_OF_SPLIT_FLAPS] = {
+  0, 0, 0, 0, 0, 0, 2, -2
 };
 
 const int DEFAULT_PULSE_DELAY = 7000;
