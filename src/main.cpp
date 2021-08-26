@@ -28,14 +28,7 @@ MQTTClient client = MQTTClient(256);
 SplitFlapArray splitFlapArray = SplitFlapArray();
 
 
-void stepDefaultSpeedDisplay()
-{
-  bool allStepped = SplitFlapArray::stepDefaultSpeedDisplays();
 
-  if (allStepped) {
-    // Stop task
-  }
-}
 
 void connectWiFi() {
     WiFi.mode(WIFI_STA);
