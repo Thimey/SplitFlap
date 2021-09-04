@@ -1,5 +1,8 @@
 
+#define _TASK_OO_CALLBACKS
+
 #include <Arduino.h>
+#include <TaskScheduler.h>
 
 #include "config.h"
 #include "SplitFlap/SplitFlap.h"
@@ -15,18 +18,26 @@ void printBits(byte myByte){
  Serial.println("");
 }
 
-SplitFlapArray::SplitFlapArray() :
-    characterDisplays(sizeof(String), MAX_CHARACTER_DISPLAY_QUEUE, FIFO)
+SplitFlapArray::SplitFlapArray(Scheduler* taskRunner) :
+    Task(500, TASK_FOREVER, taskRunner, true)
+    , characterDisplays(sizeof(String), MAX_CHARACTER_DISPLAY_QUEUE, FIFO)
     , pauseQueueTime(DEFAULT_PAUSE_MS)
+    , taskRunner(taskRunner)
 {
     // Initialise SplitFlap objects
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
         String name = "splitFlap" + i;
-        SplitFlapArray::splitFlaps[i] = SplitFlap(name);
+        SplitFlapArray::splitFlaps[i] = SplitFlap(name, taskRunner);
     }
 };
 
-uint8_t SplitFlapArray::toShiftInput(bool shouldStepValues[NUMBER_OF_SPLIT_FLAPS])
+boolean SplitFlapArray::Callback()
+{
+    Serial.println("Main loop...");
+    SplitFlapArray::loop();
+}
+
+uint8_t SplitFlapArray::boolArrayToBits(bool shouldStepValues[NUMBER_OF_SPLIT_FLAPS])
 {
     uint8_t shiftInput = 0;
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
@@ -63,7 +74,7 @@ void SplitFlapArray::stepSingleSplitFlap(int flapIndexToStep)
         splitFlapsToStep[i] = i == flapIndexToStep;
     }
 
-    const uint8_t shiftInput = SplitFlapArray::toShiftInput(splitFlapsToStep);
+    const uint8_t shiftInput = SplitFlapArray::boolArrayToBits(splitFlapsToStep);
 
     SplitFlapArray::stepSplitFlapArrayOnce(shiftInput);
 }
@@ -80,7 +91,7 @@ void SplitFlapArray::stepSplitFlapArray()
         splitFlapsToStep[i] = !isFlapAtTarget;
     }
 
-    const uint8_t shiftInput = SplitFlapArray::toShiftInput(splitFlapsToStep);
+    const uint8_t shiftInput = SplitFlapArray::boolArrayToBits(splitFlapsToStep);
 
     SplitFlapArray::stepSplitFlapArrayOnce(shiftInput);
 }
@@ -136,7 +147,7 @@ void SplitFlapArray::stepAllSensorsOff()
 
     // Step through flaps, until all sensors are off
     // TODO: Dynamically compute binary value for available flaps
-    while (sensorInput != B11111110)
+    while (sensorInput != B11111111)
     {
         SplitFlapArray::stepSplitFlapArrayOnce(~sensorInput);
         sensorInput = SplitFlapArray::getSensorInput();
@@ -173,7 +184,7 @@ void SplitFlapArray::stepAll(int rotations)
 
   while (completedRotations < rotations) {
     for (int i = 0; i < NUMBER_OF_FLAPS; ++i) {
-      SplitFlapArray::stepSplitFlapArrayOnce(B11111110);
+      SplitFlapArray::stepSplitFlapArrayOnce(B11111111);
     }
     completedRotations = completedRotations + 1;
   }
@@ -193,7 +204,7 @@ void SplitFlapArray::stepSplitFlapsOnce(bool flapsToStep[NUMBER_OF_SPLIT_FLAPS])
       }
   }
 
-  const uint8_t shiftInput = SplitFlapArray::toShiftInput(splitFlapsToStep);
+  const uint8_t shiftInput = SplitFlapArray::boolArrayToBits(splitFlapsToStep);
 
   SplitFlapArray::stepSplitFlapArrayOnce(shiftInput);
 }
@@ -204,6 +215,16 @@ void SplitFlapArray::setCharacterDisplay(String characters)
         char character = characters[i];
         if (character && i < NUMBER_OF_SPLIT_FLAPS) {
             SplitFlapArray::splitFlaps[i].setFlapTarget(character);
+        }
+    }
+}
+
+void SplitFlapArray::scheduleTasks(String characters)
+{
+    for (int i = 0; i < characters.length(); ++i) {
+        char character = characters[i];
+        if (character && i < NUMBER_OF_SPLIT_FLAPS) {
+            SplitFlapArray::splitFlaps[i].scheduleCharacter(character, SplitFlapArray::taskRunner);
         }
     }
 }
@@ -225,11 +246,17 @@ void SplitFlapArray::stepToCurrentCharacterDisplay()
 
 void SplitFlapArray::loop()
 {
-    if (!SplitFlapArray::hasSplitFlapArrayReachedTarget()) {
-        SplitFlapArray::stepToCurrentCharacterDisplay();
-    } else if (!SplitFlapArray::characterDisplays.isEmpty()) {
+
+    if (!SplitFlapArray::characterDisplays.isEmpty()) {
         String characters;
         SplitFlapArray::characterDisplays.pop(&characters);
-        SplitFlapArray::setCharacterDisplay(characters);
+        SplitFlapArray::scheduleTasks(characters);
     }
+    // if (!SplitFlapArray::hasSplitFlapArrayReachedTarget()) {
+    //     SplitFlapArray::stepToCurrentCharacterDisplay();
+    // } else if (!SplitFlapArray::characterDisplays.isEmpty()) {
+    //     String characters;
+    //     SplitFlapArray::characterDisplays.pop(&characters);
+    //     SplitFlapArray::setCharacterDisplay(characters);
+    // }
 }

@@ -11,12 +11,13 @@ const String GET_SENSOR_INPUT_TOPIC = "splitFlap1/getSensorInput";
 // Be sure to adjust the driver stepper micro stepping pins to match
 const int MICRO_STEPS = 16;
 
-const int NUMBER_OF_SPLIT_FLAPS = 7;
+const int NUMBER_OF_SPLIT_FLAPS = 8;
 const int MAX_SPLIT_FLAPS = 8;
 const int NUMBER_OF_FLAPS = 50;
 const int STEPS_PER_REVOLUTION = MICRO_STEPS * 200;
 const int MAX_CHARACTER_DISPLAY_QUEUE = 20;
 const int DEFAULT_PAUSE_MS = 4000;
+const unsigned long STEP_SPEED_MS = 400;
 
 // Pinouts
 const int SR_DRIVER_LATCH_PIN = 22; // YELLOW
