@@ -7,14 +7,16 @@
 #include <cppQueue.h>
 
 #include "Comms/Comms.h"
-// #include "SplitFlap/SplitFlap.h"
-// #include "SplitFlapArray/SplitFlapArray.h"
 #include "config.h"
 #include "secrets.h"
 
-void mainLoop();
 void stepReadySplitFlaps();
+void garbageCollection();
 
+struct displayData {
+    displayData(String characters) : characters(characters) {}
+    String characters;
+};
  struct splitFlapData {
     splitFlapData(int index) :
         index(index)
@@ -27,14 +29,19 @@ void stepReadySplitFlaps();
     bool reachedTarget;
 };
 
-cppQueue queuedDisplays(sizeof(String), MAX_CHARACTER_DISPLAY_QUEUE, FIFO);
-
-// Setup tasks
+// Setup scheduler
 Scheduler taskRunner;
+// commsTask: Maintains connection to AWS
 Task commsTask(500000, TASK_FOREVER, &commsLoop, &taskRunner, true);
-Task mainTask(500000, TASK_FOREVER, &mainLoop, &taskRunner, true);
+// stepperTask: steps motors of any splitFlap that requires stepping
 Task* stepperTask;
+// splitFlapTasks: Array of splitFlapTasks that control the timing of when a unit should step
 Task* splitFlapTasks[NUMBER_OF_SPLIT_FLAPS];
+// garbageCollectionTask: Cleans up finished tasks on the heap
+Task garbageCollectionTask(2000000, TASK_FOREVER, &garbageCollection, &taskRunner, true);
+
+cppQueue queuedDisplays(sizeof(Task*), MAX_CHARACTER_DISPLAY_QUEUE, FIFO);
+cppQueue displayTasksToDelete(sizeof(Task*), MAX_CHARACTER_DISPLAY_QUEUE, FIFO);
 
 void printBits(byte myByte){
     for (byte mask = 0x80; mask; mask >>= 1){
@@ -89,7 +96,9 @@ void stepSplitFlap() {
     }
 }
 
+
 void stepReadySplitFlaps() {
+    // Check which splitFlap are ready to step
     bool splitFlapsToStep[NUMBER_OF_SPLIT_FLAPS];
     for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
         Task* splitFlapTask = splitFlapTasks[i];
@@ -104,9 +113,17 @@ void stepReadySplitFlaps() {
         }
     }
 
+    // Step the splitFlaps
     uint8_t shiftInput = boolArrayToBits(splitFlapsToStep);
-
     stepSplitFlapArrayOnce(shiftInput);
+
+    // If display finished and others are queued, enable next display with delay
+    bool displayFinished = shiftInput == 0;
+    if (displayFinished && !queuedDisplays.isEmpty()) {
+            Task* nextDisplay;
+            queuedDisplays.pop(&nextDisplay);
+            nextDisplay->enableDelayed(DEFAULT_DISPLAY_PAUSE_US);
+    }
 }
 
 void enableMotors() {
@@ -116,17 +133,6 @@ void enableMotors() {
 void disableMotors() {
     digitalWrite(ENABLE_PIN, HIGH);
 }
-
-void queueDisplay(String characters, int stepDelay = DEFAULT_PULSE_DELAY) {
-    queuedDisplays.push(&characters);
-}
-
-// splitFlapData& getSplitFlapTaskData(int splitFlapIndex) {
-//     Task* splitFlapTask = splitFlapTasks[splitFlapIndex];
-//     splitFlapData& data = *((splitFlapData*) splitFlapTask->getLtsPointer());
-
-//     return data;
-// }
 
 int flapIndexFromCharacter(uint8_t flapCharacter)
 {
@@ -151,30 +157,6 @@ int getStepsToNextCharacter(uint8_t currentCharacter, uint8_t nextCharacter) {
     return flapsToNextCharacter * (STEPS_PER_REVOLUTION / NUMBER_OF_FLAPS);
 }
 
-void scheduleSplitFlapTasks(String characters) {
-    for (int i = 0; i < characters.length(); ++i) {
-        char nextCharacter = characters[i];
-
-        if (nextCharacter && i < NUMBER_OF_SPLIT_FLAPS) {
-            Task* splitFlapTask = splitFlapTasks[i];
-            splitFlapData& data = *((splitFlapData*) splitFlapTask->getLtsPointer());
-
-
-            uint8_t currentCharacter = data.lastCharacter;
-            int stepsToNextCharacter = getStepsToNextCharacter(currentCharacter, nextCharacter);
-
-            if (stepsToNextCharacter > 0) {
-                data.lastCharacter = nextCharacter; // Move this to onDisable?
-                data.reachedTarget = false;
-                data.readyToStep = false;
-
-                splitFlapTask->setIterations(stepsToNextCharacter);
-                splitFlapTask->enable();
-            }
-        }
-    }
-    stepperTask->enable();
-}
 
 byte getSensorInput()
 {
@@ -206,6 +188,43 @@ void stepAllSensorsOff() {
     }
 }
 
+void onDisplayTaskDisable() {
+    // Add finished display task to delete queue to be garbage collected
+    Task* finishedDisplay = &taskRunner.currentTask();
+    displayTasksToDelete.push(finishedDisplay);
+}
+
+void showDisplay() {
+    // Get characters to display from task ls
+    displayData& data = *((displayData*) taskRunner.currentLts());
+    String characters = data.characters;
+
+    // Schedule the splitFlap tasks for characters
+    for (int i = 0; i < characters.length(); ++i) {
+        char nextCharacter = characters[i];
+
+        if (nextCharacter && i < NUMBER_OF_SPLIT_FLAPS) {
+            Task* splitFlapTask = splitFlapTasks[i];
+            splitFlapData& data = *((splitFlapData*) splitFlapTask->getLtsPointer());
+
+            uint8_t currentCharacter = data.lastCharacter;
+            int stepsToNextCharacter = getStepsToNextCharacter(currentCharacter, nextCharacter);
+
+            if (stepsToNextCharacter > 0) {
+                data.lastCharacter = nextCharacter; // Move this to onDisable?
+                data.reachedTarget = false;
+                data.readyToStep = false;
+
+                splitFlapTask->setIterations(stepsToNextCharacter);
+                splitFlapTask->enable();
+            }
+        }
+    }
+
+    // Can prob remove this
+    stepperTask->enable();
+}
+
 void resetFlaps() {
     enableMotors();
 
@@ -221,15 +240,30 @@ void resetFlaps() {
         sensorInput = getSensorInput();
     }
 
-    // Reset the characters for all tasks
-    for(int i; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+    // Reset the characters for all splitFlap tasks
+    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
         splitFlapData& data = *((splitFlapData*) splitFlapTasks[i]->getLtsPointer());
         data.lastCharacter = ' ';
     }
 }
 
-void messageHandler(String &topic, String &payload) {
+void queueDisplay(String characters, int stepDelay = DEFAULT_PULSE_DELAY) {
+    // Create a disabled display task
+    Task* displayTask = new Task(TASK_IMMEDIATE, TASK_ONCE, showDisplay, &taskRunner, false);
+    // Add display date to task ls
+    displayData* data = new displayData(characters);
+    displayTask->setLtsPointer(data);
 
+    // If nothing queued, enable task immediately
+    if (queuedDisplays.isEmpty()) {
+        displayTask->enable();
+    } else {
+        // Otherwise add to queue to be enabled later
+        queuedDisplays.push(displayTask);
+    }
+}
+
+void messageHandler(String &topic, String &payload) {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, payload);
       Serial.println("Message received: ");
@@ -282,11 +316,14 @@ void setup() {
     stepperTask = new Task(STEP_SPEED / 2, TASK_FOREVER, &stepReadySplitFlaps, &taskRunner, false);
 }
 
-void mainLoop() {
-    if (!queuedDisplays.isEmpty()) {
-        String characters;
-        queuedDisplays.pop(&characters);
-        scheduleSplitFlapTasks(characters);
+void garbageCollection() {
+    if (!displayTasksToDelete.isEmpty()) {
+        Task* displayTask;
+        queuedDisplays.pop(&displayTask);
+
+        // Clean up display data and task from heap
+        delete displayTask->getLtsPointer();
+        delete displayTask;
     }
 }
 
