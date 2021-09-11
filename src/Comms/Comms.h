@@ -6,10 +6,5 @@
 
 typedef void (*MessageHandler)(String &topic, String &payload);
 
-class Comms : public Task {
-    public:
-        Comms(Scheduler* taskRunner);
-        void initialise(MessageHandler messageHandler);
-        bool Callback();
-
-};
+void commsInitialise(MessageHandler messageHandler);
+void commsLoop();

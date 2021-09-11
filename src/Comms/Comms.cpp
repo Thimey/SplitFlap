@@ -48,10 +48,17 @@ void connectAWS() {
     Serial.println("AWS IoT Connected!");
 }
 
+void commsLoop() {
+    client.loop();
 
-Comms::Comms(Scheduler* taskRunner) : Task(500, TASK_FOREVER, taskRunner, true) {};
+    if (!client.connected()) {
+        Serial.println(F("Lost connection, reconnecting..."));
+        connectAWS();
+    }
+}
 
-void Comms::initialise(MessageHandler messageHandler)
+
+void commsInitialise(MessageHandler messageHandler)
 {
     // Connect to the configured WiFi
     connectWiFi();
@@ -71,15 +78,4 @@ void Comms::initialise(MessageHandler messageHandler)
     connectAWS();
 }
 
-// Scheduled task callback to maintain connection to AWS
-boolean Comms::Callback()
-{
-    Serial.println("Wifi loop...");
-    client.loop();
-
-    if (!client.connected()) {
-        Serial.println(F("Lost connection, reconnecting..."));
-        connectAWS();
-    }
-}
 
