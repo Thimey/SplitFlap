@@ -2,5 +2,9 @@
     "editor.detectIndentation": false,
     "cSpell.words": [
         "Comms"
-    ]
+    ],
+    "files.associations": {
+        "array": "cpp",
+        "string": "cpp"
+    }
 }

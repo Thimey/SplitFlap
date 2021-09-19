@@ -16,8 +16,8 @@ const int MAX_SPLIT_FLAPS = 8;
 const int NUMBER_OF_FLAPS = 50;
 const int STEPS_PER_REVOLUTION = MICRO_STEPS * 200;
 const int MAX_CHARACTER_DISPLAY_QUEUE = 20;
-const int DEFAULT_DISPLAY_PAUSE_US = 4000000;
-const unsigned long STEP_SPEED = 1000;
+const int DEFAULT_DISPLAY_PAUSE_US = 2000000;
+const unsigned long STEP_SPEED_US = 1000;
 
 // Pinouts
 const int SR_DRIVER_LATCH_PIN = 22; // YELLOW
