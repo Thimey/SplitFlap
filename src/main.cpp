@@ -9,6 +9,7 @@
 
 #include "Comms/Comms.h"
 #include "config.h"
+#include "helpers.h"
 #include "secrets.h"
 
 void stepReadySplitFlaps();
@@ -47,16 +48,14 @@ Task displayTask(&displayNextTask, &taskRunner);
 cppQueue queuedDisplays(sizeof(displayData*), MAX_CHARACTER_DISPLAY_QUEUE, FIFO);
 cppQueue displayTasksToDelete(sizeof(Task*), MAX_CHARACTER_DISPLAY_QUEUE, FIFO);
 
-void printBits(byte myByte){
-    for (byte mask = 0x80; mask; mask >>= 1){
-        if (mask  & myByte) {
-            Serial.print('1');
-        }
-        else {
-            Serial.print('0');
-        }
-    }
-    Serial.println("");
+
+
+void enableMotors() {
+    digitalWrite(ENABLE_PIN, LOW);
+}
+
+void disableMotors() {
+    digitalWrite(ENABLE_PIN, HIGH);
 }
 
 void shiftOutSteps(uint8_t shiftInput)
@@ -77,19 +76,6 @@ void stepSplitFlapArrayOnce(uint8_t shiftInput)
     delayMicroseconds(DEFAULT_PULSE_DELAY);
 }
 
-
-uint8_t boolArrayToBits(bool shouldStepValues[NUMBER_OF_SPLIT_FLAPS])
-{
-    uint8_t shiftInput = 0;
-    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
-        if (shouldStepValues[i]) {
-            shiftInput |= 1 << (MAX_SPLIT_FLAPS - 1 - i);
-        }
-    }
-
-    return shiftInput;
-}
-
 void stepSplitFlap() {
     // Mark splitFlap as ready to step
     splitFlapData& data = *((splitFlapData*) taskRunner.currentLts());
@@ -100,7 +86,6 @@ void onSplitFlapDisable() {
     // Once a splitFlap has reached it's target, send a signal to displayStatus
     displayStatus.signal();
 }
-
 
 void stepReadySplitFlaps() {
     bool splitFlapsToStep[NUMBER_OF_SPLIT_FLAPS];
@@ -117,38 +102,6 @@ void stepReadySplitFlaps() {
     uint8_t shiftInput = boolArrayToBits(splitFlapsToStep);
     stepSplitFlapArrayOnce(shiftInput);
 }
-
-void enableMotors() {
-    digitalWrite(ENABLE_PIN, LOW);
-}
-
-void disableMotors() {
-    digitalWrite(ENABLE_PIN, HIGH);
-}
-
-int flapIndexFromCharacter(uint8_t flapCharacter)
-{
-    for (int i = 0; i < NUMBER_OF_FLAPS; ++i) {
-        if (flaps[i] == flapCharacter) {
-            return i;
-        }
-    }
-
-    return 0;
-}
-
-int getStepsToNextCharacter(uint8_t currentCharacter, uint8_t nextCharacter) {
-    int currentFlapIndex = flapIndexFromCharacter(currentCharacter);
-    int nextFlapIndex = flapIndexFromCharacter(nextCharacter);
-    int indexDiff = nextFlapIndex - currentFlapIndex;
-
-    int flapsToNextCharacter = indexDiff < 0
-        ? NUMBER_OF_FLAPS + indexDiff
-        : indexDiff;
-
-    return flapsToNextCharacter * (STEPS_PER_REVOLUTION / NUMBER_OF_FLAPS);
-}
-
 
 byte getSensorInput()
 {
@@ -240,7 +193,6 @@ void resetFlaps() {
 }
 
 void displayNextTask() {
-    Serial.println("Displaying Next...");
     if (!queuedDisplays.isEmpty()) {
         displayData * data;
         queuedDisplays.pop(&data);
@@ -259,6 +211,21 @@ void queueDisplay(String characters, int stepDelay = DEFAULT_PULSE_DELAY) {
         queuedDisplays.push(&data);
     }
 }
+
+// void startClock(String initialDisplay) {
+//     // Hour 2
+//     Task* hour2Task = splitFlapTasks[0];
+//     // Hour 1
+//     Task* hour1Task = splitFlapTasks[1];
+//     // Minute 2
+//     Task* minute2Task = splitFlapTasks[3];
+//     // Minute 1
+//     Task* minute1Task = splitFlapTasks[4];
+//     // Second 2
+//     Task* second2Task = splitFlapTasks[6];
+//     // Second 1
+//     Task* second1Task = splitFlapTasks[7];
+// }
 
 void messageHandler(String &topic, String &payload) {
     StaticJsonDocument<200> doc;
@@ -296,6 +263,7 @@ void setup() {
     pinMode(SR_SENSOR_CLOCK_PIN, OUTPUT);
     pinMode(SR_SENSOR_DATA_PIN, INPUT);
 
+    // Ensure splitFlaps rotate correct direction
     digitalWrite(DIR_PIN, HIGH);
 
     commsInitialise(messageHandler);
