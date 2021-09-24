@@ -41,4 +41,7 @@ const uint8_t flaps[NUMBER_OF_FLAPS] = {
 };
 
 const int DEFAULT_PULSE_DELAY = 500;
+const int FLAP_CALLIPRATION_STEPS[NUMBER_OF_SPLIT_FLAPS] = {
+  0, 0, 0, 0, 0, 0, 2, -2
+};
 
