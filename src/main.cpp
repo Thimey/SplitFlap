@@ -1,77 +1,250 @@
-#include <Arduino.h>
-#include <WiFiClientSecure.h>
-#include <MQTTClient.h>
-#include <ArduinoJson.h>
-#include "WiFi.h"
+#define _TASK_LTS_POINTER
+#define _TASK_MICRO_RES
+#define _TASK_STATUS_REQUEST
 
-#include "SplitFlap/SplitFlap.h"
-#include "SplitFlapArray/SplitFlapArray.h"
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <TaskScheduler.h>
+#include <cppQueue.h>
+
+#include "Comms/Comms.h"
 #include "config.h"
+#include "helpers.h"
 #include "secrets.h"
 
-// WiFi client
-WiFiClientSecure net = WiFiClientSecure();
-// MQTT client
-MQTTClient client = MQTTClient(256);
-// Split flap Array
-SplitFlapArray splitFlapArray = SplitFlapArray();
+void stepReadySplitFlaps();
+void displayNextTask();
+bool onDisplayTaskEnable();
 
-void connectWiFi() {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+struct displayData {
+    displayData(String characters) : characters(characters) {}
+    String characters;
+};
+ struct splitFlapData {
+    splitFlapData(int index) :
+        index(index)
+        , lastCharacter(' ')
+        , readyToStep(false)
+        , reachedTarget(true) {}
+    int index;
+    uint8_t lastCharacter;
+    bool readyToStep;
+    bool reachedTarget;
+};
 
-    Serial.println("Connecting to Wi-Fi");
+StatusRequest displayStatus;
 
-    while (WiFi.status() != WL_CONNECTED){
-        delay(1000);
-        Serial.print(".");
-        // WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+// Setup scheduler
+Scheduler taskRunner;
+// commsTask: Maintains connection to AWS
+Task commsTask(500000, TASK_FOREVER, &commsLoop, &taskRunner, true);
+// stepperTask: steps motors of any splitFlap that requires stepping
+Task* stepperTask;
+// splitFlapTasks: Array of splitFlapTasks that control the timing of when a unit should step
+Task* splitFlapTasks[NUMBER_OF_SPLIT_FLAPS];
+// displayTask: Runs queued displays
+Task displayTask(&displayNextTask, &taskRunner);
+
+cppQueue queuedDisplays(sizeof(displayData*), MAX_CHARACTER_DISPLAY_QUEUE, FIFO);
+cppQueue displayTasksToDelete(sizeof(Task*), MAX_CHARACTER_DISPLAY_QUEUE, FIFO);
+
+
+
+void enableMotors() {
+    digitalWrite(ENABLE_PIN, LOW);
+}
+
+void disableMotors() {
+    digitalWrite(ENABLE_PIN, HIGH);
+}
+
+void shiftOutSteps(uint8_t shiftInput)
+{
+    // Prevent data from being released
+    digitalWrite(SR_DRIVER_LATCH_PIN, LOW);
+    // Write the step data to register
+    shiftOut(SR_DRIVER_DATA_PIN, SR_DRIVER_CLOCK_PIN, LSBFIRST, shiftInput);
+    // Release the data
+    digitalWrite(SR_DRIVER_LATCH_PIN, HIGH);
+}
+
+void stepSplitFlapArrayOnce(uint8_t shiftInput)
+{
+    shiftOutSteps(shiftInput);
+    delayMicroseconds(DEFAULT_PULSE_DELAY);
+    shiftOutSteps(0);
+    delayMicroseconds(DEFAULT_PULSE_DELAY);
+}
+
+void stepSplitFlap() {
+    // Mark splitFlap as ready to step
+    splitFlapData& data = *((splitFlapData*) taskRunner.currentLts());
+    data.readyToStep = true;
+}
+
+void onSplitFlapDisable() {
+    // Once a splitFlap has reached it's target, send a signal to displayStatus
+    displayStatus.signal();
+}
+
+void stepReadySplitFlaps() {
+    bool splitFlapsToStep[NUMBER_OF_SPLIT_FLAPS];
+    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+        Task* splitFlapTask = splitFlapTasks[i];
+        splitFlapData& data = *((splitFlapData*) splitFlapTask->getLtsPointer());
+        splitFlapsToStep[i] = splitFlapTask->isEnabled() && data.readyToStep;
+
+        // Reset all splitFlaps
+        data.readyToStep = false;
+    }
+
+    // Step the splitFlaps
+    uint8_t shiftInput = boolArrayToBits(splitFlapsToStep);
+    stepSplitFlapArrayOnce(shiftInput);
+}
+
+byte getSensorInput()
+{
+    // Write pulse to load pin
+    digitalWrite(SR_SENSOR_LOAD_PIN, LOW);
+    delayMicroseconds(5);
+    digitalWrite(SR_SENSOR_LOAD_PIN, HIGH);
+    delayMicroseconds(5);
+
+    // Get data from 74HC165
+    digitalWrite(SR_SENSOR_CLOCK_PIN, LOW);
+    digitalWrite(SR_SENSOR_CLOCK_ENABLE_PIN, LOW);
+    byte sensorInput = shiftIn(SR_SENSOR_DATA_PIN, SR_SENSOR_CLOCK_PIN, LSBFIRST);
+    digitalWrite(SR_SENSOR_CLOCK_ENABLE_PIN, HIGH);
+
+    // Since bits are inverted from shift register, invert them for actual sensor values
+    return ~sensorInput;
+}
+
+void stepAllSensorsOff() {
+    byte sensorInput = getSensorInput();
+
+    // Step through flaps, until all sensors are off
+    // TODO: Dynamically compute binary value for available flaps
+    while (sensorInput != B11111111)
+    {
+        stepSplitFlapArrayOnce(~sensorInput);
+        sensorInput = getSensorInput();
     }
 }
 
-void connectAWS() {
-    Serial.print("Connecting to AWS IOT");
+void showDisplay(displayData* data) {
+    String characters = data->characters;
+    int scheduledSplitFlapCount = 0;
 
-    while (!client.connect(THINGNAME)) {
-        Serial.print(".");
-        delay(1000);
+    // Schedule the splitFlap tasks for characters
+    for (int i = 0; i < characters.length(); ++i) {
+        char nextCharacter = characters[i];
+
+        if (nextCharacter && i < NUMBER_OF_SPLIT_FLAPS) {
+            Task* splitFlapTask = splitFlapTasks[i];
+            splitFlapData& data = *((splitFlapData*) splitFlapTask->getLtsPointer());
+
+            uint8_t currentCharacter = data.lastCharacter;
+            int stepsToNextCharacter = getStepsToNextCharacter(currentCharacter, nextCharacter);
+
+            if (stepsToNextCharacter > 0) {
+                scheduledSplitFlapCount += 1;
+                data.lastCharacter = nextCharacter; // Move this to onDisable?
+                data.reachedTarget = false;
+                data.readyToStep = false;
+
+                splitFlapTask->setIterations(stepsToNextCharacter);
+                splitFlapTask->enable();
+            }
+        }
     }
 
-    if (!client.connected()){
-        Serial.println("AWS IoT Timeout!");
-        return;
-    }
+    // Set displayTask to wait for completion of this display
+    displayStatus.setWaiting(scheduledSplitFlapCount);
+    displayTask.waitForDelayed(&displayStatus, DEFAULT_DISPLAY_PAUSE_US);
 
-    // Subscribe to topics
-    client.subscribe(DISPLAY_SUB_TOPIC);
-    client.subscribe(RESET_SUB_TOPIC);
-    client.subscribe(DISABLE_MOTORS_TOPIC);
-    client.subscribe(ENABLE_MOTORS_TOPIC);
-    client.subscribe(GET_SENSOR_INPUT_TOPIC);
+    stepperTask->enable();
 
-    Serial.println("AWS IoT Connected!");
+    // Clean up display data
+    delete data;
 }
+
+void resetFlaps() {
+    enableMotors();
+
+    // Since hall effect sensors cover a range of flaps and we want only the first flap
+    // Step all flaps off motors
+    stepAllSensorsOff();
+
+    byte sensorInput = getSensorInput();
+
+    // Step through flaps, till all sensors triggered.
+    while (sensorInput != 0) {
+        stepSplitFlapArrayOnce(sensorInput);
+        sensorInput = getSensorInput();
+    }
+
+    // Reset the characters for all splitFlap tasks
+    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+        splitFlapData& data = *((splitFlapData*) splitFlapTasks[i]->getLtsPointer());
+        data.lastCharacter = ' ';
+    }
+}
+
+void displayNextTask() {
+    if (!queuedDisplays.isEmpty()) {
+        displayData * data;
+        queuedDisplays.pop(&data);
+
+        showDisplay(data);
+    }
+}
+
+void queueDisplay(String characters, int stepDelay = DEFAULT_PULSE_DELAY) {
+    displayData* data = new displayData(characters);
+
+    bool availableToShowDisplay = queuedDisplays.isEmpty() && displayStatus.completed();
+    if (availableToShowDisplay) {
+        showDisplay(data);
+    } else {
+        queuedDisplays.push(&data);
+    }
+}
+
+// void startClock(String initialDisplay) {
+//     // Hour 2
+//     Task* hour2Task = splitFlapTasks[0];
+//     // Hour 1
+//     Task* hour1Task = splitFlapTasks[1];
+//     // Minute 2
+//     Task* minute2Task = splitFlapTasks[3];
+//     // Minute 1
+//     Task* minute1Task = splitFlapTasks[4];
+//     // Second 2
+//     Task* second2Task = splitFlapTasks[6];
+//     // Second 1
+//     Task* second1Task = splitFlapTasks[7];
+// }
 
 void messageHandler(String &topic, String &payload) {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, payload);
-    Serial.print("Messaged received");
+      Serial.println("Message received: ");
+      Serial.print(topic);
 
     if (topic == DISPLAY_SUB_TOPIC) {
         JsonArray characterDisplays = doc["characterDisplays"].as<JsonArray>();
         int stepDelay = doc["stepDelay"].as<int>();
         for (JsonVariant characterDisplay : characterDisplays) {
-            splitFlapArray.queueCharacterDisplay(characterDisplay.as<String>(), stepDelay);
+            queueDisplay(characterDisplay.as<String>(), stepDelay);
         }
     } else if (topic == RESET_SUB_TOPIC) {
-        splitFlapArray.resetFlaps();
+        resetFlaps();
     } else if (topic == DISABLE_MOTORS_TOPIC) {
-        splitFlapArray.disableMotors();
+        disableMotors();
     } else if (topic == ENABLE_MOTORS_TOPIC) {
-        splitFlapArray.enableMotors();
-        // splitFlapArray.stepAll(1);
-    } else if (topic == GET_SENSOR_INPUT_TOPIC) {
-        splitFlapArray.printSensorInput();
+        enableMotors();
     }
 }
 
@@ -90,36 +263,24 @@ void setup() {
     pinMode(SR_SENSOR_CLOCK_PIN, OUTPUT);
     pinMode(SR_SENSOR_DATA_PIN, INPUT);
 
+    // Ensure splitFlaps rotate correct direction
     digitalWrite(DIR_PIN, HIGH);
 
-    // Connect to the configured WiFi
-    connectWiFi();
+    commsInitialise(messageHandler);
 
-    // Configure WiFiClientSecure to use the AWS IoT device credentials
-    net.setCACert(AWS_CERT_CA);
-    net.setCertificate(AWS_CERT_CRT);
-    net.setPrivateKey(AWS_CERT_PRIVATE);
+    for (int i = 0; i < NUMBER_OF_SPLIT_FLAPS; ++i) {
+        // Initialise splitFlap task
+        Task *t = new Task(STEP_SPEED_US, TASK_ONCE, &stepSplitFlap, &taskRunner, false, NULL, &onSplitFlapDisable);
+        // Initialise local data for splitFlap task
+        splitFlapData* data = new splitFlapData(i);
+        t->setLtsPointer(data);
 
-    // Connect to the MQTT broker to AWS endpoint for Thing
-    client.begin(AWS_IOT_ENDPOINT, 8883, net);
+        splitFlapTasks[i] = t;
+    }
 
-    // Attach message handler to MQTT broker
-    client.onMessage(messageHandler);
-
-    // Connect device to AWS iot
-    connectAWS();
+    stepperTask = new Task(STEP_SPEED_US / 2, TASK_FOREVER, &stepReadySplitFlaps, &taskRunner, false);
 }
 
 void loop() {
-    // Maintain a connection to the server
-    client.loop();
-
-    if (!client.connected()) {
-        Serial.println(F("Lost connection, reconnecting..."));
-        connectAWS();
-    }
-
-    delay(500);
-
-    splitFlapArray.loop();
+    taskRunner.execute();
 }

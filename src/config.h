@@ -15,8 +15,9 @@ const int NUMBER_OF_SPLIT_FLAPS = 8;
 const int MAX_SPLIT_FLAPS = 8;
 const int NUMBER_OF_FLAPS = 50;
 const int STEPS_PER_REVOLUTION = MICRO_STEPS * 200;
-const int MAX_CHARACTER_DISPLAY_QUEUE = 10;
-const int DEFAULT_PAUSE_MS = 4000;
+const int MAX_CHARACTER_DISPLAY_QUEUE = 20;
+const int DEFAULT_DISPLAY_PAUSE_US = 2000000;
+const unsigned long STEP_SPEED_US = 1000;
 
 // Pinouts
 const int SR_DRIVER_LATCH_PIN = 22; // YELLOW
@@ -39,9 +40,8 @@ const uint8_t flaps[NUMBER_OF_FLAPS] = {
     ':', '\'', '=', '-', '+', '?', '$', '#', '!', '%'
 };
 
+const int DEFAULT_PULSE_DELAY = 500;
 const int FLAP_CALLIPRATION_STEPS[NUMBER_OF_SPLIT_FLAPS] = {
   0, 0, 0, 0, 0, 0, 2, -2
 };
-
-const int DEFAULT_PULSE_DELAY = 7000;
 
