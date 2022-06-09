@@ -7,6 +7,7 @@ const String RESET_SUB_TOPIC = "splitFlap1/reset";
 const String DISABLE_MOTORS_TOPIC = "splitFlap1/disableMotors";
 const String ENABLE_MOTORS_TOPIC = "splitFlap1/enableMotors";
 const String GET_SENSOR_INPUT_TOPIC = "splitFlap1/getSensorInput";
+const String START_TIMER_TOPIC = "splitFlap1/startTimer";
 
 // Be sure to adjust the driver stepper micro stepping pins to match
 const int MICRO_STEPS = 16;
@@ -18,6 +19,8 @@ const int STEPS_PER_REVOLUTION = MICRO_STEPS * 200;
 const int MAX_CHARACTER_DISPLAY_QUEUE = 20;
 const int DEFAULT_DISPLAY_PAUSE_US = 2000000;
 const unsigned long STEP_SPEED_US = 1000;
+
+const int TIMER_INTERVAL_US = 900000; // TODO: Calculate this
 
 // Pinouts
 const int SR_DRIVER_LATCH_PIN = 22; // YELLOW
@@ -40,7 +43,7 @@ const uint8_t flaps[NUMBER_OF_FLAPS] = {
     ':', '\'', '=', '-', '+', '?', '$', '#', '!', '%'
 };
 
-const int DEFAULT_PULSE_DELAY = 500;
+const int DEFAULT_PULSE_DELAY = 300;
 const int FLAP_CALLIPRATION_STEPS[NUMBER_OF_SPLIT_FLAPS] = {
   0, 0, 0, 0, 0, 0, 2, -2
 };

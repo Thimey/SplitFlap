@@ -15,12 +15,14 @@
 void stepReadySplitFlaps();
 void displayNextTask();
 bool onDisplayTaskEnable();
+void timer();
 
 struct displayData {
     displayData(String characters) : characters(characters) {}
     String characters;
 };
- struct splitFlapData {
+
+struct splitFlapData {
     splitFlapData(int index) :
         index(index)
         , lastCharacter(' ')
@@ -30,6 +32,13 @@ struct displayData {
     uint8_t lastCharacter;
     bool readyToStep;
     bool reachedTarget;
+};
+
+struct timerData {
+    timerData(int elapsedSeconds) :
+        elapsedSeconds(elapsedSeconds) {}
+
+    int elapsedSeconds;
 };
 
 StatusRequest displayStatus;
@@ -44,6 +53,8 @@ Task* stepperTask;
 Task* splitFlapTasks[NUMBER_OF_SPLIT_FLAPS];
 // displayTask: Runs queued displays
 Task displayTask(&displayNextTask, &taskRunner);
+// timerTask: Controls when to show timer/clock displays
+Task timerTask(TIMER_INTERVAL_US, TASK_FOREVER, &timer, &taskRunner, false);
 
 cppQueue queuedDisplays(sizeof(displayData*), MAX_CHARACTER_DISPLAY_QUEUE, FIFO);
 cppQueue displayTasksToDelete(sizeof(Task*), MAX_CHARACTER_DISPLAY_QUEUE, FIFO);
@@ -146,7 +157,11 @@ void showDisplay(displayData* data) {
             splitFlapData& data = *((splitFlapData*) splitFlapTask->getLtsPointer());
 
             uint8_t currentCharacter = data.lastCharacter;
-            int stepsToNextCharacter = getStepsToNextCharacter(currentCharacter, nextCharacter);
+            int stepsToNextCharacter = getStepsToNextCharacter(
+                currentCharacter,
+                nextCharacter,
+                FLAP_CALLIPRATION_STEPS[i]
+            );
 
             if (stepsToNextCharacter > 0) {
                 scheduledSplitFlapCount += 1;
@@ -212,20 +227,27 @@ void queueDisplay(String characters, int stepDelay = DEFAULT_PULSE_DELAY) {
     }
 }
 
-// void startClock(String initialDisplay) {
-//     // Hour 2
-//     Task* hour2Task = splitFlapTasks[0];
-//     // Hour 1
-//     Task* hour1Task = splitFlapTasks[1];
-//     // Minute 2
-//     Task* minute2Task = splitFlapTasks[3];
-//     // Minute 1
-//     Task* minute1Task = splitFlapTasks[4];
-//     // Second 2
-//     Task* second2Task = splitFlapTasks[6];
-//     // Second 1
-//     Task* second1Task = splitFlapTasks[7];
-// }
+void timer() {
+    int elapsedSeconds = timerTask.getRunCounter() - 1;
+    String prevTime = makeDisplayFromSeconds(elapsedSeconds);
+    String time = makeDisplayFromSeconds(elapsedSeconds);
+    // If seconds going from 9 => 0, skip the to 1 and adjust delay
+    bool isSecond9to0 = lastChar(prevTime) == '9' && lastChar(time) == '0';
+    int delay = isSecond9to0
+        ? (1.5 * TIMER_INTERVAL_US)
+        : TIMER_INTERVAL_US;
+
+    showDisplay(new displayData(time));
+}
+
+void startTimer(int seconds) {
+    String initialDisplay = "00:00:00";
+
+    timerData* data = new timerData(0);
+    timerTask.setLtsPointer(data);
+    timerTask.setIterations(seconds + 1);
+    timerTask.enable();
+}
 
 void messageHandler(String &topic, String &payload) {
     StaticJsonDocument<200> doc;
@@ -245,6 +267,9 @@ void messageHandler(String &topic, String &payload) {
         disableMotors();
     } else if (topic == ENABLE_MOTORS_TOPIC) {
         enableMotors();
+    } else if (topic == START_TIMER_TOPIC) {
+        int seconds = doc["seconds"].as<int>();
+        startTimer(seconds);
     }
 }
 
@@ -279,6 +304,8 @@ void setup() {
     }
 
     stepperTask = new Task(STEP_SPEED_US / 2, TASK_FOREVER, &stepReadySplitFlaps, &taskRunner, false);
+
+    resetFlaps();
 }
 
 void loop() {

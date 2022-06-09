@@ -39,7 +39,7 @@ int flapIndexFromCharacter(uint8_t flapCharacter)
     return 0;
 }
 
-int getStepsToNextCharacter(uint8_t currentCharacter, uint8_t nextCharacter) {
+int getStepsToNextCharacter(uint8_t currentCharacter, uint8_t nextCharacter, int calibrationSteps) {
     int currentFlapIndex = flapIndexFromCharacter(currentCharacter);
     int nextFlapIndex = flapIndexFromCharacter(nextCharacter);
     int indexDiff = nextFlapIndex - currentFlapIndex;
@@ -48,5 +48,23 @@ int getStepsToNextCharacter(uint8_t currentCharacter, uint8_t nextCharacter) {
         ? NUMBER_OF_FLAPS + indexDiff
         : indexDiff;
 
-    return flapsToNextCharacter * (STEPS_PER_REVOLUTION / NUMBER_OF_FLAPS);
+    int flapsToNext = flapsToNextCharacter * (STEPS_PER_REVOLUTION / NUMBER_OF_FLAPS);
+
+    return flapsToNext > 0 ? flapsToNext + calibrationSteps : 0;
+}
+
+char lastChar(String characters) {
+    return characters.charAt(characters.length());
+}
+
+String timeDisplay(int num) {
+    return num > 9 ? String(num) : "0" + String(num);
+}
+
+String makeDisplayFromSeconds(int totalSeconds) {
+    int seconds = totalSeconds % 60;
+    int minutes = (totalSeconds / 60) % 60;
+    int hours = totalSeconds / (60 * 60);
+
+    return timeDisplay(hours) + ":" + timeDisplay(minutes) + ":" + timeDisplay(seconds);
 }

@@ -44,6 +44,7 @@ void connectAWS() {
     client.subscribe(DISABLE_MOTORS_TOPIC);
     client.subscribe(ENABLE_MOTORS_TOPIC);
     client.subscribe(GET_SENSOR_INPUT_TOPIC);
+    client.subscribe(START_TIMER_TOPIC);
 
     Serial.println("AWS IoT Connected!");
 }
